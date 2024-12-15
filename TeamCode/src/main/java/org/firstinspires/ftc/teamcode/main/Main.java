@@ -22,6 +22,8 @@
 
 package org.firstinspires.ftc.teamcode.main;
 
+import android.annotation.SuppressLint;
+
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -70,10 +72,9 @@ public class Main extends LinearOpMode {
     public DcMotor      leftBackDrive    = null;
     public DcMotor      rightBackDrive   = null;
     public DcMotor      armMotor         = null; //the arm motor
-    public DcMotor      liftMotor        = null; //
     public CRServo      intake           = null; //the active intake servo
     public Servo        wrist            = null; //the wrist servo
-    public SparkFunOTOS odometry         = null;
+    public SparkFunOTOS otos             = null;
 
 
 
@@ -112,13 +113,12 @@ public class Main extends LinearOpMode {
     If you'd like it to move further, increase that number. If you'd like it to not move
     as far from the starting position, decrease it. */
 
-    final double ARM_COLLAPSED_INTO_ROBOT  = 0;
-    final double ARM_COLLECT               = 5 * ARM_TICKS_PER_DEGREE;
-    final double ARM_CLEAR_BARRIER         = 15 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SPECIMEN        = 90 * ARM_TICKS_PER_DEGREE;
-    final double ARM_SCORE_SAMPLE_IN_LOW   = 90 * ARM_TICKS_PER_DEGREE;
-    final double ARM_ATTACH_HANGING_HOOK   = 110 * ARM_TICKS_PER_DEGREE;
-    final double ARM_WINCH_ROBOT           = 10  * ARM_TICKS_PER_DEGREE;
+    final double ARM_COLLAPSED_INTO_ROBOT  = degreesToArmTicks(0);
+    final double ARM_COLLECT               = degreesToArmTicks(5);
+    final double ARM_CLEAR_BARRIER         = degreesToArmTicks(15);
+    final double ARM_SCORE_SPECIMEN        = degreesToArmTicks(90);
+    final double ARM_SCORE_SAMPLE_IN_LOW   = degreesToArmTicks(90);
+    final double ARM_WINCH_ROBOT           = degreesToArmTicks(10);
 
     /* Variables to store the speed the intake servo should be set at to intake, and deposit game elements. */
     final double INTAKE_COLLECT    = -0.7;
@@ -130,59 +130,40 @@ public class Main extends LinearOpMode {
     final double WRIST_FOLDED_OUT  = 0.8;
 
     /* A number in degrees that the triggers can adjust the arm position by */
-    final double FUDGE_FACTOR = 15 * ARM_TICKS_PER_DEGREE;
+    final double FUDGE_FACTOR = degreesToArmTicks(15);
 
     /* Variables that are used to set the arm to a specific position */
-    double armPosition = (int)ARM_COLLAPSED_INTO_ROBOT;
+    double armPosition = (int) ARM_COLLAPSED_INTO_ROBOT;
     double armPositionFudgeFactor;
-
-    final double LIFT_TICKS_PER_MM = (111132.0 / 289.0) / 120.0;
-
-    final double LIFT_COLLAPSED = 0 * LIFT_TICKS_PER_MM;
-    final double LIFT_SCORING_IN_LOW_BASKET = 0 * LIFT_TICKS_PER_MM;
-    final double LIFT_SCORING_IN_HIGH_BASKET = 480 * LIFT_TICKS_PER_MM;
-
-    double liftPosition = LIFT_COLLAPSED;
-
     double cycleTime = 0;
     double loopTime = 0;
     double oldTime = 0;
 
-    double armLiftComp = 0;
 
     SparkFunOTOS.Pose2D pos = null;
 
     @Override
     public void runOpMode() {
-        pos = odometry.getPosition();
-        /*
-        These variables are private to the OpMode, and are used to control the drivetrain.
-         */
-        double left;
-        double right;
-        double forward;
-        double rotate;
-        double max;
 
+        pos = otos.getPosition();
 
         /* Define and Initialize Motors */
         leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
         leftBackDrive   = hardwareMap.dcMotor.get("left_back");
         rightFrontDrive = hardwareMap.dcMotor.get("right_front");
         rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-        // liftMotor       = hardwareMap.dcMotor.get("liftMotor");
         armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-        odometry        = hardwareMap.get(SparkFunOTOS.class, "odometry");
+        otos            = hardwareMap.get(SparkFunOTOS.class, "otos");
 
 
+        // OTOS initialization
+        configureOtos();
 
        /*
        we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
        drive motors to go forward.
         */
 
-        // OTOS initialization
-        configureOtos();
 
         leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
         leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
@@ -204,7 +185,7 @@ public class Main extends LinearOpMode {
         /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
         If you do not have the encoder plugged into this motor, it will not run in this code. */
-        armMotor.setTargetPosition(0);
+        armMotor.setTargetPosition(degreesToArmTicks(0));
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -236,9 +217,8 @@ public class Main extends LinearOpMode {
         waitForStart();
 
         /* Run until the driver presses stop */
-        while (opModeIsActive())
-
-        {  double y = -gamepad1.left_stick_y;
+        while (opModeIsActive()) {
+            double y = -gamepad1.left_stick_y;
             double x = gamepad1.left_stick_x;
             double rx = gamepad1.right_stick_x;
 
@@ -472,20 +452,18 @@ public class Main extends LinearOpMode {
             /* send telemetry to the driver of the arm's current position and target position */
             telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
             telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
-            telemetry.addData("lift variable", liftPosition);
             telemetry.addData("X coordinate", pos.x);
             telemetry.addData("Y coordinate", pos.y);
             telemetry.addData("Heading angle", pos.h);
-            //   telemetry.addData("Lift Target Position",liftMotor.getTargetPosition());
-            //   telemetry.addData("lift current position", liftMotor.getCurrentPosition());
-            //   telemetry.addData("liftMotor Current:",((DcMotorEx) liftMotor).getCurrent(CurrentUnit.AMPS));
             telemetry.update();
-
-
-
         }
     }
 
+    private int degreesToArmTicks(double degrees) {
+        return (int) (ARM_TICKS_PER_DEGREE * degrees);
+    }
+
+    @SuppressLint("DefaultLocale")
     private void configureOtos() {
         telemetry.addLine("Configuring OTOS...");
         telemetry.update();
@@ -496,9 +474,9 @@ public class Main extends LinearOpMode {
         // persisted in the sensor, so you need to set at the start of all your
         // OpModes if using the non-default value.
         // myOtos.setLinearUnit(DistanceUnit.METER);
-        odometry.setLinearUnit(DistanceUnit.INCH);
+        otos.setLinearUnit(DistanceUnit.INCH);
         // myOtos.setAngularUnit(AnguleUnit.RADIANS);
-        odometry.setAngularUnit(AngleUnit.DEGREES);
+        otos.setAngularUnit(AngleUnit.DEGREES);
 
         // Assuming you've mounted your sensor to a robot and it's not centered,
         // you can specify the offset for the sensor relative to the center of the
@@ -512,7 +490,7 @@ public class Main extends LinearOpMode {
         // would be {-5, 10, -90}. These can be any value, even the angle can be
         // tweaked slightly to compensate for imperfect mounting (eg. 1.3 degrees).
         SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(0, 0, 0);
-        odometry.setOffset(offset);
+        otos.setOffset(offset);
 
         // Here we can set the linear and angular scalars, which can compensate for
         // scaling issues with the sensor measurements. Note that as of firmware
@@ -530,8 +508,8 @@ public class Main extends LinearOpMode {
         // multiple speeds to get an average, then set the linear scalar to the
         // inverse of the error. For example, if you move the robot 100 inches and
         // the sensor reports 103 inches, set the linear scalar to 100/103 = 0.971
-        odometry.setLinearScalar(1.0);
-        odometry.setAngularScalar(1.0);
+        otos.setLinearScalar(1.0);
+        otos.setAngularScalar(1.0);
 
         // The IMU on the OTOS includes a gyroscope and accelerometer, which could
         // have an offset. Note that as of firmware version 1.0, the calibration
@@ -543,23 +521,23 @@ public class Main extends LinearOpMode {
         // to wait until the calibration is complete. If no parameters are provided,
         // it will take 255 samples and wait until done; each sample takes about
         // 2.4ms, so about 612ms total
-        odometry.calibrateImu();
+        otos.calibrateImu();
 
         // Reset the tracking algorithm - this resets the position to the origin,
         // but can also be used to recover from some rare tracking errors
-        odometry.resetTracking();
+        otos.resetTracking();
 
         // After resetting the tracking, the OTOS will report that the robot is at
         // the origin. If your robot does not start at the origin, or you have
         // another source of location information (eg. vision odometry), you can set
         // the OTOS location to match and it will continue to track from there.
         SparkFunOTOS.Pose2D currentPosition = new SparkFunOTOS.Pose2D(0, 0, 0);
-        odometry.setPosition(currentPosition);
+        otos.setPosition(currentPosition);
 
         // Get the hardware and firmware version
         SparkFunOTOS.Version hwVersion = new SparkFunOTOS.Version();
         SparkFunOTOS.Version fwVersion = new SparkFunOTOS.Version();
-        odometry.getVersionInfo(hwVersion, fwVersion);
+        otos.getVersionInfo(hwVersion, fwVersion);
 
         telemetry.addLine("OTOS configured! Press start to get position data!");
         telemetry.addLine();
