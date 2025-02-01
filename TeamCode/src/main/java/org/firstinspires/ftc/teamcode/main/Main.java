@@ -28,7 +28,7 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+//import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -59,7 +59,25 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  *
  */
 
+abstract class Arm implements DcMotor {
+    public Arm i = this;
+    Arm() {
+        i.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        ((DcMotorEx) i).setVelocity(1500);
+    }
+    public void runArm() {
+        i.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    }
+    public int armDegreesToTicks(double degrees) {
+        return (int) (
+                753.2 // This is the exact gear ratio of the (26.9:1) Yellow Jacket gearbox
+                        * 100.0 / 20.0 // This is the external gear reduction, a 20T pinion gear that drives a 100T hub-mount gear
+                        * 1/360.0 // we want ticks per degree, not per rotation
+                        * degrees // the specified degrees
+        );
+    }
 
+}
 @TeleOp(name="Main", group="Robot")
 //@Disabled
 public class Main extends LinearOpMode {
@@ -70,7 +88,7 @@ public class Main extends LinearOpMode {
     public DcMotor      leftBackDrive   = null;
     public DcMotor      rightBackDrive  = null;
     public DcMotor      armMotor        = null; //the arm motor
-    public DcMotor      viperMotor = null; // the viper slide motor
+    public DcMotor      viperMotor      = null; // the viper slide motor
     public CRServo      intake          = null; //the active intake servo
     public Servo        wrist           = null; //the wrist servo
     public SparkFunOTOS otos            = null;
@@ -384,9 +402,9 @@ public class Main extends LinearOpMode {
         leftBackDrive   = hardwareMap.dcMotor.get("left_back");
         rightFrontDrive = hardwareMap.dcMotor.get("right_front");
         rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-        viperMotor = hardwareMap.dcMotor.get("viper_motor");
+        viperMotor      = hardwareMap.dcMotor.get("viper_motor");
         armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        otos            = hardwareMap.get(SparkFunOTOS.class, "otos");
 
 
        /*
@@ -420,7 +438,7 @@ public class Main extends LinearOpMode {
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE); // ----------- | risky | ---------
+        viperMotor.setDirection(DcMotor.Direction.REVERSE); // ----------- | risky | ---------
         viperMotor.setTargetPosition(0);
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
         viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
