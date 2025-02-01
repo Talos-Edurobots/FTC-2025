@@ -1,32 +1,9 @@
-/*   MIT License
- *   Copyright (c) [2024] [Base 10 Assets, LLC]
- *
- *   Permission is hereby granted, free of charge, to any person obtaining a copy
- *   of this software and associated documentation files (the "Software"), to deal
- *   in the Software without restriction, including without limitation the rights
- *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *   copies of the Software, and to permit persons to whom the Software is
- *   furnished to do so, subject to the following conditions:
-
- *   The above copyright notice and this permission notice shall be included in all
- *   copies or substantial portions of the Software.
-
- *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *   SOFTWARE.
- */
-
 package org.firstinspires.ftc.teamcode.main;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -48,7 +25,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * into the submersible, and a linear slide to hang (which we didn't end up using)
  *
  * the drive system is all 5203-2402-0019 (312 RPM Yellow Jacket Motors) and it is based on a Strafer chassis
- * The arm shoulder takes the design from the starter kit robot. So it uses the same 117rpm motor with an
+ * The arm shoulder takes the design from the starter kit robot. So it uses the same 117rpm (223rpm) motor with an
  * external 5:1 reduction
  *
  * The drivetrain is set up as "field centric" with the internal control hub IMU. This means
@@ -70,8 +47,8 @@ public class Main extends LinearOpMode {
     public DcMotor      leftBackDrive   = null;
     public DcMotor      rightBackDrive  = null;
     public DcMotor      armMotor        = null; //the arm motor
-    public DcMotor      viperMotor = null; // the viper slide motor
-    public CRServo      intake          = null; //the active intake servo
+    public DcMotor      viperMotor      = null; // the viper slide motor
+    public Servo      intake          = null; //the active intake servo
     public Servo        wrist           = null; //the wrist servo
     public SparkFunOTOS otos            = null;
 
@@ -85,7 +62,7 @@ public class Main extends LinearOpMode {
     double oldTime = 0;
     int armLiftComp = 0;
     IMU imu;
-    boolean retractViper;
+    boolean viperRetracted;
     SparkFunOTOS.Pose2D pos;
 
     @Override
@@ -137,21 +114,21 @@ public class Main extends LinearOpMode {
             it folds out the wrist to make sure it is in the correct orientation to intake, and it
             turns the intake on to the COLLECT mode.*/
 
-            if(gamepad1.a){
+            if(gamepad1.a){ // ps4: x
                 /* This is the intaking/collecting arm position */
                 armCollect();
                 viperCollapsed();
-                wristOut();
+                wristHorizontal();
                 intakeCollect();
             }
 
-            else if (gamepad1.b){
+            else if (gamepad1.b) { // ps4: circle
                 armClearBarrier();
             }
 
             else if (gamepad1.x){
                 /* This is the correct height to score the sample in the HIGH BASKET */
-                retractViper = true;
+                viperRetracted = false;
                 armScoreSampleInHigh();
                 viperScoreInHigh();
             }
@@ -161,28 +138,25 @@ public class Main extends LinearOpMode {
                     back to folded inside the robot. This is also the starting configuration */
                 armCollapsed();
                 viperCollapsed();
-                intakeOff();
-                wristIn();
+                wristVertical();
             }
 
             else if (gamepad1.dpad_right){
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armScoreSpecimen();
-                wristIn();
+                wristVertical();
             }
 
             else if (gamepad1.dpad_up){
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
                 armAttachHangingHook();
-                intakeOff();
-                wristIn();
+                wristVertical();
             }
 
             else if (gamepad1.dpad_down){
                 /* this moves the arm down to lift the robot up once it has been hooked */
                 armWinchRobot();
-                intakeOff();
-                wristIn();
+                wristVertical();
             }
 
             setArmTargetPosition();
@@ -244,13 +218,9 @@ public class Main extends LinearOpMode {
             loopTime = getRuntime();
             cycleTime = loopTime - oldTime;
             oldTime = loopTime;
-
             output();
         }
     }
-
-
-
 
 //    ---------------- | initialization, output | ----------------------------------------------------------
 public void initializeIO() {
@@ -259,10 +229,9 @@ public void initializeIO() {
     leftBackDrive   = hardwareMap.dcMotor.get("left_back");
     rightFrontDrive = hardwareMap.dcMotor.get("right_front");
     rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-    viperMotor = hardwareMap.dcMotor.get("viper_motor");
+    viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
     armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
     otos = hardwareMap.get(SparkFunOTOS.class, "otos");
-
 
        /*
        we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
@@ -279,11 +248,10 @@ public void initializeIO() {
     leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
+    viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
     /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
     ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
-
 
         /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
@@ -295,19 +263,18 @@ public void initializeIO() {
     armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-    viperMotor.setDirection(DcMotorSimple.Direction.REVERSE); // ----------- | risky | ---------
+    viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
     viperMotor.setTargetPosition(0);
     viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-    viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
     /* Define and initialize servos.*/
-    intake = hardwareMap.get(CRServo.class, "intake_servo");
+    intake = hardwareMap.get(Servo.class, "intake_servo");
     wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
     /* Make sure that the intake is off, and the wrist is folded in. */
-    intakeOff();
-    wristOut();
+
+    wristHorizontal();
 
     /* Send telemetry message to signify robot waiting */
     telemetry.addLine("Robot Ready.");
@@ -323,19 +290,19 @@ public void initializeIO() {
         // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
         imu.initialize(parameters);
     }
+
     public void output(){
         /* send telemetry to the driver of the arm's current position and target position */
-        telemetry.addLine("Version: 2");
+        telemetry.addLine("Version: Android 2");
         telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
-        telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
-        telemetry.addData("lift variable", viperPosition);
+        telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
         telemetry.addData("viper busy", viperMotor.isBusy());
-        telemetry.addData("Lift Target Position", viperMotor.getTargetPosition());
-        telemetry.addData("lift current position", viperMotor.getCurrentPosition());
+        telemetry.addData("viper Target Position", viperMotor.getTargetPosition());
+        telemetry.addData("viper current position", viperMotor.getCurrentPosition());
         telemetry.addData("liftMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("cycle time",cycleTime);
-//      telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
-//      telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
+//        telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
+//        telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
         telemetry.addData("X coordinate", pos.x);
         telemetry.addData("Y coordinate", pos.y);
         telemetry.addData("Heading angle", pos.h);
@@ -345,7 +312,7 @@ public void initializeIO() {
 // ---------------- | arm | ------------------------------------------------------------------------
     public int armDegreesToTicks(double degrees) {
         return (int) (
-                753.2 // This is the exact gear ratio of the (26.9:1) Yellow Jacket gearbox
+                753.2 // This is the exact gear ratio of the (26.9:1), 223 rpm Yellow Jacket gearbox
                         * 100.0 / 20.0 // This is the external gear reduction, a 20T pinion gear that drives a 100T hub-mount gear
                         * 1/360.0 // we want ticks per degree, not per rotation
                         * degrees // the specified degrees
@@ -424,32 +391,28 @@ public void initializeIO() {
     }
     public void runArm() {
         // here we check if the lift should be retracted.
-        if (retractViper) {
+        if (!viperRetracted) {
             viperCollapsed(); // we set the lift position to be collapsed
-            setViperTargetPosition(); // set the position
             runViper(); // run the motor
         }
-        if (!viperMotor.isBusy()){ // if the lift motor is not busy retracting
-            retractViper = false; // we set the retract lift variable to false
-            ((DcMotorEx) armMotor).setVelocity(1500);
+        if ((!viperMotor.isBusy()) && viperMotor.getCurrentPosition() == 0){ // if the lift motor is not busy retracting
+            viperRetracted = true; // we set the retract lift variable to false
+            ((DcMotorEx) armMotor).setVelocity(2500); // 1500
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
         }
     }
 
 //    ---------------- | intake system | -----------------------------------------------------------
     public void intakeCollect() {
-    intake.setPower(-0.7); // intake velocity
+        intake.setPosition(-0.7); // intake closed
 }
-    public void intakeDeposit() {
-        intake.setPower(0.5); // deposit velocity
+    public void intakeOpen() {
+        intake.setPosition(0.5); // intake open
     }
-    public void intakeOff() {
-        intake.setPower(0.0); // power off
-    }
-    public void wristIn() {
+    public void wristVertical() {
         wrist.setPosition(.87); // 0.43
     }
-    public void wristOut() {
+    public void wristHorizontal() {
         wrist.setPosition(.52);
     }
 
@@ -485,11 +448,11 @@ public void initializeIO() {
         setViperTargetPosition();
     }
     public void viperDeltaTimeIncrement() {
-        viperPosition += (int) (3600 * cycleTime); // 2800
+        viperPosition += (int) (5000 * cycleTime); // 3600
         setViperTargetPosition();
     }
     public void viperDeltaTimeDecrement() {
-        viperPosition -= (int) (3600 * cycleTime); // 2800
+        viperPosition -= (int) (5000 * cycleTime); // 3600
         setViperTargetPosition();
     }
     public void viperNormalization() {
@@ -508,7 +471,7 @@ public void initializeIO() {
         viperMotor.setTargetPosition(viperPosition);
     }
     public void runViper() {
-        ((DcMotorEx) viperMotor).setVelocity(3200); // 2100 velocity of the viper slide 200
+        ((DcMotorEx) viperMotor).setVelocity(5000); // 3200 velocity of the viper slide 200
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 //    ---------------- | strafer movement, otos | --------------------------------------------------
@@ -556,7 +519,7 @@ public void initializeIO() {
         // persisted in the sensor, so you need to set at the start of all your
         // OpModes if using the non-default value.
         // myOtos.setLinearUnit(DistanceUnit.METER);
-        otos.setLinearUnit(DistanceUnit.INCH);
+        otos.setLinearUnit(DistanceUnit.CM);
         // myOtos.setAngularUnit(AnguleUnit.RADIANS);
         otos.setAngularUnit(AngleUnit.DEGREES);
 
@@ -633,3 +596,25 @@ public void initializeIO() {
         telemetry.update();
     }
 }
+
+/*   MIT License
+ *   Copyright (c) [2024] [Base 10 Assets, LLC]
+ *
+ *   Permission is hereby granted, free of charge, to any person obtaining a copy
+ *   of this software and associated documentation files (the "Software"), to deal
+ *   in the Software without restriction, including without limitation the rights
+ *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ *   copies of the Software, and to permit persons to whom the Software is
+ *   furnished to do so, subject to the following conditions:
+
+ *   The above copyright notice and this permission notice shall be included in all
+ *   copies or substantial portions of the Software.
+
+ *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ *   SOFTWARE.
+ */
