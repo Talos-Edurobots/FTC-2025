@@ -76,7 +76,6 @@ abstract class Arm implements DcMotor {
                         * degrees // the specified degrees
         );
     }
-
 }
 @TeleOp(name="Main", group="Robot")
 //@Disabled
