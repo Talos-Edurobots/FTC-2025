@@ -251,15 +251,98 @@ public class Main extends LinearOpMode {
 
 
 
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
-//    ------------------------------------------------------------------------------------------------
 
+//    ---------------- | initialization, output | ----------------------------------------------------------
+public void initializeIO() {
+    /* Define and Initialize Motors */
+    leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
+    leftBackDrive   = hardwareMap.dcMotor.get("left_back");
+    rightFrontDrive = hardwareMap.dcMotor.get("right_front");
+    rightBackDrive  = hardwareMap.dcMotor.get("right_back");
+    viperMotor = hardwareMap.dcMotor.get("viper_motor");
+    armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
+    otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+
+
+       /*
+       we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
+       drive motors to go forward.
+        */
+    leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+    leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
+        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
+        stops much quicker. */
+    leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
+    /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
+    ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+
+        /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
+        Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
+        If you do not have the encoder plugged into this motor, it will not run in this code. */
+    armCollapsed();
+    viperCollapsed();
+    armMotor.setTargetPosition(0);
+    armMotor.setDirection(DcMotor.Direction.REVERSE);
+    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+    viperMotor.setDirection(DcMotorSimple.Direction.REVERSE); // ----------- | risky | ---------
+    viperMotor.setTargetPosition(0);
+    viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+    /* Define and initialize servos.*/
+    intake = hardwareMap.get(CRServo.class, "intake_servo");
+    wrist  = hardwareMap.get(Servo.class, "wrist_servo");
+
+    /* Make sure that the intake is off, and the wrist is folded in. */
+    intakeOff();
+    wristOut();
+
+    /* Send telemetry message to signify robot waiting */
+    telemetry.addLine("Robot Ready.");
+    telemetry.update();
+}
+
+    public void initializeIMU() {
+        imu = hardwareMap.get(IMU.class, "imu");
+        // Adjust the orientation parameters to match your robot
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
+        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
+        imu.initialize(parameters);
+    }
+    public void output(){
+        /* send telemetry to the driver of the arm's current position and target position */
+        telemetry.addLine("Version: 2");
+        telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
+        telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
+        telemetry.addData("lift variable", viperPosition);
+        telemetry.addData("viper busy", viperMotor.isBusy());
+        telemetry.addData("Lift Target Position", viperMotor.getTargetPosition());
+        telemetry.addData("lift current position", viperMotor.getCurrentPosition());
+        telemetry.addData("liftMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("cycle time",cycleTime);
+//      telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
+//      telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
+        telemetry.addData("X coordinate", pos.x);
+        telemetry.addData("Y coordinate", pos.y);
+        telemetry.addData("Heading angle", pos.h);
+        telemetry.update();
+    }
+
+// ---------------- | arm | ------------------------------------------------------------------------
     public int armDegreesToTicks(double degrees) {
         return (int) (
                 753.2 // This is the exact gear ratio of the (26.9:1) Yellow Jacket gearbox
@@ -267,8 +350,110 @@ public class Main extends LinearOpMode {
                         * 1/360.0 // we want ticks per degree, not per rotation
                         * degrees // the specified degrees
         );
+
+    }
+    public void setArmLiftComp(){
+            /*
+            This is probably my favorite piece of code on this robot. It's a clever little software
+            solution to a problem the robot has.
+            This robot has an extending lift on the end of an arm shoulder. That arm shoulder should
+            run to a specific angle, and stop there to collect from the field. And the angle that
+            the shoulder should stop at changes based on how long the arm is (how far the lift is extended)
+            so here, we add a compensation factor based on how far the lift is extended.
+            That comp factor is multiplied by the number of mm the lift is extended, which
+            results in the number of degrees we need to fudge our arm up by to keep the end of the arm
+            the same distance from the field.
+            Now we don't need this to happen when the arm is up and in scoring position. So if the arm
+            is above 45°, then we just set armLiftComp to 0. It's only if it's below 45° that we set it
+            to a value.
+             */
+
+        if (armPosition < armDegreesToTicks(45)) {
+            armLiftComp = (int) (0.25568 * viperPosition);
+        }
+        else{
+            armLiftComp = 0;
+        }
+    }
+    public void setArmPosition(int ticks) {
+        armPosition = ticks;
+    }
+    public void armCollapsed() {
+        armPosition = 0;
+    }
+    public void armClearBarrier() {
+            /* This is about 20° up from the collecting position to clear the barrier
+            Note here that we don't set the wrist position or the intake power when we
+            select this "mode", this means that the intake and wrist will continue what
+            they were doing before we clicked left bumper. */
+        armPosition = armDegreesToTicks(20);
+    }
+    public void armCollect(){
+        armPosition = armDegreesToTicks(5);
+    }
+    public void armScoreSpecimen() {
+        armPosition = armDegreesToTicks(90);
+    }
+    public void armScoreSampleInHigh() {
+        armPosition = armDegreesToTicks(110);
+    } // 90
+    public void armAttachHangingHook() {
+        armPosition = armDegreesToTicks(110);
+    }
+    public void armWinchRobot() {
+        armPosition = armDegreesToTicks(10);
+    }
+    public void configureFudge() {
+            /* Here we create a "fudge factor" for the arm position.
+            This allows you to adjust (or "fudge") the arm position slightly with the gamepad triggers.
+            We want the left trigger to move the arm up, and right trigger to move the arm down.
+            So we add the right trigger's variable to the inverse of the left trigger. If you pull
+            both triggers an equal amount, they cancel and leave the arm at zero. But if one is larger
+            than the other, it "wins out". This variable is then multiplied by our FUDGE_FACTOR.
+            The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
+        armPositionFudgeFactor = armDegreesToTicks(15) * (int)(gamepad1.right_trigger + (-gamepad1.left_trigger));
+    }
+    public void setArmTargetPosition() {
+           /* Here we set the target position of our arm to match the variable that was selected
+            by the driver. We add the armPosition Variable to our armPositionFudgeFactor, before adding
+            our armLiftComp, which adjusts the arm height for different lift extensions.
+            We also set the target velocity (speed) the motor runs at, and use setMode to run it.*/
+
+        //
+        armMotor.setTargetPosition(armPosition + armPositionFudgeFactor + armLiftComp);
+    }
+    public void runArm() {
+        // here we check if the lift should be retracted.
+        if (retractViper) {
+            viperCollapsed(); // we set the lift position to be collapsed
+            setViperTargetPosition(); // set the position
+            runViper(); // run the motor
+        }
+        if (!viperMotor.isBusy()){ // if the lift motor is not busy retracting
+            retractViper = false; // we set the retract lift variable to false
+            ((DcMotorEx) armMotor).setVelocity(1500);
+            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
+        }
     }
 
+//    ---------------- | intake system | -----------------------------------------------------------
+    public void intakeCollect() {
+    intake.setPower(-0.7); // intake velocity
+}
+    public void intakeDeposit() {
+        intake.setPower(0.5); // deposit velocity
+    }
+    public void intakeOff() {
+        intake.setPower(0.0); // power off
+    }
+    public void wristIn() {
+        wrist.setPosition(.87); // 0.43
+    }
+    public void wristOut() {
+        wrist.setPosition(.52);
+    }
+
+//    ---------------- | viper slide | -------------------------------------------------------------
     public int viperMotorMmToTicks(double mm) {
         /*
          * 312 rpm motor: 537.7 ticks per revolution
@@ -287,7 +472,46 @@ public class Main extends LinearOpMode {
                                 * mm // specified length
                 );
     }
-
+    public void viperScoreInLow() {
+        viperPosition = 0;
+        setViperTargetPosition();
+    }
+    public void viperScoreInHigh() {
+        viperPosition = viperMotorMmToTicks(480);
+        setViperTargetPosition();
+    }
+    public void viperCollapsed() {
+        viperPosition = 0;
+        setViperTargetPosition();
+    }
+    public void viperDeltaTimeIncrement() {
+        viperPosition += (int) (3600 * cycleTime); // 2800
+        setViperTargetPosition();
+    }
+    public void viperDeltaTimeDecrement() {
+        viperPosition -= (int) (3600 * cycleTime); // 2800
+        setViperTargetPosition();
+    }
+    public void viperNormalization() {
+        /*here we check to see if the lift is trying to go higher than the maximum extension.
+           if it is, we set the variable to the max. */
+        if (viperPosition > MAX_VIPER_POSITION){
+            viperPosition = MAX_VIPER_POSITION;
+        }
+        //same as above, we see if the lift is trying to go below 0, and if it is, we set it to 0.
+        if (viperPosition < 0){
+            viperPosition = 0;
+        }
+        setViperTargetPosition();
+    }
+    public void setViperTargetPosition(){
+        viperMotor.setTargetPosition(viperPosition);
+    }
+    public void runViper() {
+        ((DcMotorEx) viperMotor).setVelocity(3200); // 2100 velocity of the viper slide 200
+        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    }
+//    ---------------- | strafer movement, otos | --------------------------------------------------
     public void straferMovement(){
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
@@ -322,228 +546,7 @@ public class Main extends LinearOpMode {
         rightFrontDrive.setPower(frontRightPower);
         rightBackDrive.setPower(backRightPower);
     }
-
-    public void intakeCollect() {
-        intake.setPower(-0.7); // intake velocity
-    }
-    public void intakeDeposit() {
-        intake.setPower(0.5); // deposit velocity
-    }
-
-    public void intakeOff() {
-        intake.setPower(0.0); // power off
-    }
-    public void wristIn() {
-        wrist.setPosition(.87); // 0.43
-    }
-    public void wristOut() {
-        wrist.setPosition(.52);
-    }
-    public void setArmPosition(int ticks) {
-        armPosition = ticks;
-    }
-    public void armCollapsed() {
-        armPosition = 0;
-    }
-    public void armCollect(){
-        armPosition = armDegreesToTicks(5);
-    }
-    public void armClearBarrier() {
-            /* This is about 20° up from the collecting position to clear the barrier
-            Note here that we don't set the wrist position or the intake power when we
-            select this "mode", this means that the intake and wrist will continue what
-            they were doing before we clicked left bumper. */
-        armPosition = armDegreesToTicks(20);
-    }
-    public void armScoreSpecimen() {
-        armPosition = armDegreesToTicks(90);
-    }
-    public void armScoreSampleInHigh() {
-        armPosition = armDegreesToTicks(110);
-    } // 90
-    public void armAttachHangingHook() {
-        armPosition = armDegreesToTicks(110);
-    }
-    public void armWinchRobot() {
-        armPosition = armDegreesToTicks(10);
-    }
-
-    public void configureFudge() {
-            /* Here we create a "fudge factor" for the arm position.
-            This allows you to adjust (or "fudge") the arm position slightly with the gamepad triggers.
-            We want the left trigger to move the arm up, and right trigger to move the arm down.
-            So we add the right trigger's variable to the inverse of the left trigger. If you pull
-            both triggers an equal amount, they cancel and leave the arm at zero. But if one is larger
-            than the other, it "wins out". This variable is then multiplied by our FUDGE_FACTOR.
-            The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
-        armPositionFudgeFactor = armDegreesToTicks(15) * (int)(gamepad1.right_trigger + (-gamepad1.left_trigger));
-    }
-    public void initializeIO() {
-        /* Define and Initialize Motors */
-        leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
-        leftBackDrive   = hardwareMap.dcMotor.get("left_back");
-        rightFrontDrive = hardwareMap.dcMotor.get("right_front");
-        rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-        viperMotor = hardwareMap.dcMotor.get("viper_motor");
-        armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
-
-
-       /*
-       we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
-       drive motors to go forward.
-        */
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-
-        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
-        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
-        stops much quicker. */
-        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
-
-
-        /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
-        Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
-        If you do not have the encoder plugged into this motor, it will not run in this code. */
-        armCollapsed();
-        viperCollapsed();
-        armMotor.setTargetPosition(0);
-        armMotor.setDirection(DcMotor.Direction.REVERSE);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE); // ----------- | risky | ---------
-        viperMotor.setTargetPosition(0);
-        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-        /* Define and initialize servos.*/
-        intake = hardwareMap.get(CRServo.class, "intake_servo");
-        wrist  = hardwareMap.get(Servo.class, "wrist_servo");
-
-        /* Make sure that the intake is off, and the wrist is folded in. */
-        intakeOff();
-        wristOut();
-
-        /* Send telemetry message to signify robot waiting */
-        telemetry.addLine("Robot Ready.");
-        telemetry.update();
-    }
-    public void initializeIMU() {
-        imu = hardwareMap.get(IMU.class, "imu");
-        // Adjust the orientation parameters to match your robot
-        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.UP,
-                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
-        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
-        imu.initialize(parameters);
-    }
-    public void output(){
-        /* send telemetry to the driver of the arm's current position and target position */
-        telemetry.addLine("Version: 2");
-        telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
-        telemetry.addData("arm Encoder: ", armMotor.getCurrentPosition());
-        telemetry.addData("lift variable", viperPosition);
-        telemetry.addData("viper busy", viperMotor.isBusy());
-        telemetry.addData("Lift Target Position", viperMotor.getTargetPosition());
-        telemetry.addData("lift current position", viperMotor.getCurrentPosition());
-        telemetry.addData("liftMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("cycle time",cycleTime);
-//        telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
-//        telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
-        telemetry.addData("X coordinate", pos.x);
-        telemetry.addData("Y coordinate", pos.y);
-        telemetry.addData("Heading angle", pos.h);
-        telemetry.update();
-    }
-    public void liftScoreInLow() {
-        viperPosition = 0;
-    }
-    public void viperScoreInHigh() {
-        viperPosition = viperMotorMmToTicks(480);
-    }
-    public void viperCollapsed() {
-        viperPosition = 0;
-    }
-    public void viperDeltaTimeIncrement() {
-        viperPosition += (int) (3600 * cycleTime); // 2800
-    }
-    public void viperDeltaTimeDecrement() {
-        viperPosition -= (int) (3600 * cycleTime); // 2800
-    }
-    public void viperNormalization() {
-        /*here we check to see if the lift is trying to go higher than the maximum extension.
-           if it is, we set the variable to the max. */
-        if (viperPosition > MAX_VIPER_POSITION){
-            viperPosition = MAX_VIPER_POSITION;
-        }
-        //same as above, we see if the lift is trying to go below 0, and if it is, we set it to 0.
-        if (viperPosition < 0){
-            viperPosition = 0;
-        }
-    }
-    public void setArmLiftComp(){
-            /*
-            This is probably my favorite piece of code on this robot. It's a clever little software
-            solution to a problem the robot has.
-            This robot has an extending lift on the end of an arm shoulder. That arm shoulder should
-            run to a specific angle, and stop there to collect from the field. And the angle that
-            the shoulder should stop at changes based on how long the arm is (how far the lift is extended)
-            so here, we add a compensation factor based on how far the lift is extended.
-            That comp factor is multiplied by the number of mm the lift is extended, which
-            results in the number of degrees we need to fudge our arm up by to keep the end of the arm
-            the same distance from the field.
-            Now we don't need this to happen when the arm is up and in scoring position. So if the arm
-            is above 45°, then we just set armLiftComp to 0. It's only if it's below 45° that we set it
-            to a value.
-             */
-
-        if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.25568 * viperPosition);
-        }
-        else{
-            armLiftComp = 0;
-        }
-    }
-    public void setArmTargetPosition() {
-           /* Here we set the target position of our arm to match the variable that was selected
-            by the driver. We add the armPosition Variable to our armPositionFudgeFactor, before adding
-            our armLiftComp, which adjusts the arm height for different lift extensions.
-            We also set the target velocity (speed) the motor runs at, and use setMode to run it.*/
-
-        //
-        armMotor.setTargetPosition(armPosition + armPositionFudgeFactor + armLiftComp);
-    }
-    public void runArm() {
-        // here we check if the lift should be retracted.
-        if (retractViper) {
-            viperCollapsed(); // we set the lift position to be collapsed
-            setViperTargetPosition(); // set the position
-            runViper(); // run the motor
-        }
-        if (!viperMotor.isBusy()){ // if the lift motor is not busy retracting
-            retractViper = false; // we set the retract lift variable to false
-            ((DcMotorEx) armMotor).setVelocity(1500);
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
-        }
-    }
-    public void setViperTargetPosition(){
-        viperMotor.setTargetPosition(viperPosition);
-    }
-    public void runViper() {
-        ((DcMotorEx) viperMotor).setVelocity(3200); // 2100 velocity of the viper slide 200
-        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    }
-    private void configureOtos() {
+    public void configureOtos() {
         telemetry.addLine("Configuring OTOS...");
         telemetry.update();
 
