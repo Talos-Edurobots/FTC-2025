@@ -95,7 +95,7 @@ public class Main extends LinearOpMode {
             one cycle. Which can cause strange behavior. */
 
 //            if (gamepad1.left_bumper) {
-//                intakeCollect();
+//                intakeCollectHorizontal();
 //            }
 //            else if (gamepad1.right_bumper) {
 //                intakeDeposit();
@@ -119,7 +119,7 @@ public class Main extends LinearOpMode {
                 armCollect();
                 viperCollapsed();
                 wristHorizontal();
-                intakeCollect();
+                intakeCollectHorizontal();
             }
 
             else if (gamepad1.b) { // ps4: circle
@@ -403,17 +403,20 @@ public void initializeIO() {
     }
 
 //    ---------------- | intake system | -----------------------------------------------------------
-    public void intakeCollect() {
-        intake.setPosition(-0.7); // intake closed
-}
+    public void intakeCollectHorizontal() {
+        intake.setPosition(0.66); // intake closed
+    }
+    public void intakeCollectVertical() {
+        intake.setPosition(0.75); // intake closed
+    }
     public void intakeOpen() {
-        intake.setPosition(0.5); // intake open
+        intake.setPosition(0.53); // intake open
     }
     public void wristVertical() {
-        wrist.setPosition(.87); // 0.43
+        wrist.setPosition(.2); // 0.43
     }
     public void wristHorizontal() {
-        wrist.setPosition(.52);
+        wrist.setPosition(.54);
     }
 
 //    ---------------- | viper slide | -------------------------------------------------------------

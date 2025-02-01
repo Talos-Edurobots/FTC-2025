@@ -22,7 +22,6 @@
 
 package org.firstinspires.ftc.teamcode.main;
 
-import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -53,7 +52,8 @@ import com.qualcomm.robotcore.hardware.Servo;
 public class ServoPositionHelper extends LinearOpMode {
 
     // Declare OpMode member.
-    private Servo servo;
+    private Servo servo1;
+    private Servo servo2;
     String servoName = "wrist_servo";
 
     /*
@@ -91,7 +91,7 @@ public class ServoPositionHelper extends LinearOpMode {
          * Initialize the hardware variables, string here must exactly match the name of a configured
          * servo in the Robot Configuration on your Driver Station.
          */
-        servo = hardwareMap.get(Servo.class, servoName);
+        servo1 = hardwareMap.get(Servo.class, servoName);
 
         /*
          * Set the servo to an initial position of 0.5, we do this before the while (opModeIsActive())
@@ -99,10 +99,10 @@ public class ServoPositionHelper extends LinearOpMode {
          * There isn't anything special about doing this at 0.5. We could instead choose 0, or 1!
          */
         servoPosition = 0.5;
-        servo.setPosition(servoPosition);
+        servo1.setPosition(servoPosition);
 
 
-        telemetry.addData("Servo Set Position: ", servo.getPosition());
+        telemetry.addData("Servo Set Position: ", servo1.getPosition());
         telemetry.update();
 
         // Wait for the game to start (driver presses START)
@@ -158,7 +158,7 @@ public class ServoPositionHelper extends LinearOpMode {
              * Finally, set the servo to the servoPosition variable. We do this only once per loop
              * so that we can be sure not to write conflicting positions to the servo.
              */
-            servo.setPosition(servoPosition);
+            servo1.setPosition(servoPosition);
 
             // Because our logic has finished, we set our "previousGamepad" booleans to the current ones.
             previousGamepadY = currentGamepadY;
