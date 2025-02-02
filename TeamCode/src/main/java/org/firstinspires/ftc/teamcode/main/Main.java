@@ -40,7 +40,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 @TeleOp(name="Main", group="Robot")
 //@Disabled
 public class Main extends LinearOpMode {
-
     /* Declare OpMode members. */
     public DcMotor      leftFrontDrive  = null; //the left drivetrain motor
     public DcMotor      rightFrontDrive = null; //the right drivetrain motor
@@ -63,6 +62,8 @@ public class Main extends LinearOpMode {
     int armLiftComp = 0;
     IMU imu;
     boolean viperRetracted;
+    boolean wristVertical;
+    boolean intakeOpened;
     SparkFunOTOS.Pose2D pos;
 
     @Override
@@ -94,15 +95,22 @@ public class Main extends LinearOpMode {
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
 
-//            if (gamepad1.left_bumper) {
-//                intakeCollectHorizontal();
-//            }
-//            else if (gamepad1.right_bumper) {
-//                intakeDeposit();
-//            }
-//            else if (gamepad1.y) {
-//                intakeOff();
-//            }
+            if (gamepad2.left_bumper && wristVertical && intakeOpened) {
+                intakeCollectVertical();
+            }
+            else if (gamepad2.left_bumper && !intakeOpened) {
+                intakeOpen();
+            }
+            else if (gamepad2.left_bumper && !wristVertical && intakeOpened) {
+                intakeCollectHorizontal();
+            }
+
+            if (gamepad2.right_bumper && wristVertical){
+                wristHorizontal();
+            }
+            else if (gamepad2.right_bumper && !wristVertical){
+                wristVertical();
+            }
 
             configureFudge();
 
@@ -405,18 +413,23 @@ public void initializeIO() {
 //    ---------------- | intake system | -----------------------------------------------------------
     public void intakeCollectHorizontal() {
         intake.setPosition(0.66); // intake closed
+        intakeOpened = false;
     }
     public void intakeCollectVertical() {
         intake.setPosition(0.75); // intake closed
+        intakeOpened = false;
     }
     public void intakeOpen() {
         intake.setPosition(0.53); // intake open
+        intakeOpened = true;
     }
     public void wristVertical() {
         wrist.setPosition(.2); // 0.43
+        wristVertical = true;
     }
     public void wristHorizontal() {
         wrist.setPosition(.54);
+        wristVertical = false;
     }
 
 //    ---------------- | viper slide | -------------------------------------------------------------
