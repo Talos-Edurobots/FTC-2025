@@ -64,6 +64,8 @@ public class Main extends LinearOpMode {
     boolean viperRetracted;
     boolean wristVertical;
     boolean intakeOpened;
+    boolean prevGamepad2RB;
+    boolean prevGamepad2LB;
     SparkFunOTOS.Pose2D pos;
 
     @Override
@@ -96,25 +98,24 @@ public class Main extends LinearOpMode {
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
 
-            if (gamepad2.left_bumper && wristVertical && intakeOpened) {
+            if (gamepad2.left_bumper && prevGamepad2LB && wristVertical && intakeOpened) {
                 intakeCollectVertical();
             }
-            else if (gamepad2.left_bumper && !intakeOpened) {
+            else if (gamepad2.left_bumper && prevGamepad2LB && !intakeOpened) {
                 intakeOpen();
             }
-            else if (gamepad2.left_bumper && !wristVertical && intakeOpened) {
+            else if (gamepad2.left_bumper && prevGamepad2LB && !wristVertical && intakeOpened) {
                 intakeCollectHorizontal();
             }
 
-            if (gamepad2.right_bumper && wristVertical){
+            if (gamepad2.right_bumper && prevGamepad2RB && wristVertical){
                 wristHorizontal();
             }
-            else if (gamepad2.right_bumper && !wristVertical){
+            else if (gamepad2.right_bumper && prevGamepad2RB && !wristVertical){
                 wristVertical();
             }
 
             configureFudge();
-
 
             /* Here we implement a set of if else statements to set our arm to different scoring positions.
             We check to see if a specific button is pressed, and then move the arm (and sometimes
@@ -171,7 +172,6 @@ public class Main extends LinearOpMode {
             setArmTargetPosition();
             runArm();
 
-
             /* Here we set the lift position based on the driver input.
             This is a.... weird, way to set the position of a "closed loop" device. The lift is run
             with encoders. So it knows exactly where it is, and there's a limit to how far in and
@@ -227,6 +227,8 @@ public class Main extends LinearOpMode {
             loopTime = getRuntime();
             cycleTime = loopTime - oldTime;
             oldTime = loopTime;
+            prevGamepad2RB = gamepad2.right_bumper;
+            prevGamepad2LB = gamepad2.left_bumper;
             output();
         }
     }
@@ -309,7 +311,7 @@ public void initializeIO() {
         telemetry.addData("viper Target Position", viperMotor.getTargetPosition());
         telemetry.addData("viper current position", viperMotor.getCurrentPosition());
         telemetry.addData("liftMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("cycle time",cycleTime);
+        telemetry.addData("cycle time sec",cycleTime);
         telemetry.addData("wrist pos", wrist.getPosition());
         telemetry.addData("intake pos", intake.getPosition());
 //        telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
@@ -347,7 +349,7 @@ public void initializeIO() {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.025568 * viperPosition); // 0.25568
+            armLiftComp = (int) (0.25568 * viperPosition);
         }
         else{
             armLiftComp = 0;
