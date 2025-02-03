@@ -47,7 +47,7 @@ public class Main extends LinearOpMode {
     public DcMotor      rightBackDrive  = null;
     public DcMotor      armMotor        = null; //the arm motor
     public DcMotor      viperMotor      = null; // the viper slide motor
-    public Servo      intake          = null; //the active intake servo
+    public Servo        intake          = null; //the active intake servo
     public Servo        wrist           = null; //the wrist servo
     public SparkFunOTOS otos            = null;
 
@@ -79,6 +79,7 @@ public class Main extends LinearOpMode {
         {
             straferMovement();
             setArmLiftComp();
+
 
             pos = otos.getPosition();
             /* Here we handle the three buttons that have direct control of the intake speed.
@@ -301,7 +302,7 @@ public void initializeIO() {
 
     public void output(){
         /* send telemetry to the driver of the arm's current position and target position */
-        telemetry.addLine("Version: Android 2");
+        telemetry.addLine("Version: Android 3");
         telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
         telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
         telemetry.addData("viper busy", viperMotor.isBusy());
@@ -309,6 +310,8 @@ public void initializeIO() {
         telemetry.addData("viper current position", viperMotor.getCurrentPosition());
         telemetry.addData("liftMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("cycle time",cycleTime);
+        telemetry.addData("wrist pos", wrist.getPosition());
+        telemetry.addData("intake pos", intake.getPosition());
 //        telemetry.addLine(String.format("OTOS Hardware Version: v%d.%d", hwVersion.major, hwVersion.minor));
 //        telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
         telemetry.addData("X coordinate", pos.x);
@@ -344,7 +347,7 @@ public void initializeIO() {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.25568 * viperPosition);
+            armLiftComp = (int) (0.025568 * viperPosition); // 0.25568
         }
         else{
             armLiftComp = 0;
