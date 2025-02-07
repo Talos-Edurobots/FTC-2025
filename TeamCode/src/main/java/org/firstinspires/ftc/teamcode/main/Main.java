@@ -67,6 +67,7 @@ public class Main extends LinearOpMode {
     boolean prevGamepad2RB;
     boolean prevGamepad2LB;
     SparkFunOTOS.Pose2D pos;
+    int capturedLiftPosition;
 
     @Override
     public void runOpMode() {
@@ -455,6 +456,10 @@ public void initializeIO() {
                         ) // viper slide unfolded length
                                 * mm // specified length
                 );
+    }
+    public void setViperPosition(int ticks) {
+        viperPosition = ticks;
+        setViperTargetPosition();
     }
     public void viperScoreInLow() {
         viperPosition = 0;
