@@ -37,9 +37,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  */
 
 
-@TeleOp(name="Main", group="Robot")
+@TeleOp(name="TeleOpMain", group="Robot")
 //@Disabled
-public class Main extends LinearOpMode {
+public class TeleOpMain extends LinearOpMode {
     /* Declare OpMode members. */
     public DcMotor      leftFrontDrive  = null; //the left drivetrain motor
     public DcMotor      rightFrontDrive = null; //the right drivetrain motor
@@ -64,8 +64,8 @@ public class Main extends LinearOpMode {
     boolean viperRetracted;
     boolean wristVertical;
     boolean intakeOpened;
-    boolean prevGamepad2RB;
-    boolean prevGamepad2LB;
+    boolean prevGamepad2A;
+    boolean prevGamepad2B;
     SparkFunOTOS.Pose2D pos;
     int capturedLiftPosition;
 
@@ -99,20 +99,20 @@ public class Main extends LinearOpMode {
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
 
-            if (gamepad2.left_bumper && prevGamepad2LB && wristVertical && intakeOpened) {
+            if (gamepad2.b && !prevGamepad2B && wristVertical && intakeOpened) {
                 intakeCollectVertical();
             }
-            else if (gamepad2.left_bumper && prevGamepad2LB && !intakeOpened) {
+            else if (gamepad2.b && !prevGamepad2B && !intakeOpened) {
                 intakeOpen();
             }
-            else if (gamepad2.left_bumper && prevGamepad2LB && !wristVertical && intakeOpened) {
+            else if (gamepad2.b && !prevGamepad2B && !wristVertical && intakeOpened) {
                 intakeCollectHorizontal();
             }
 
-            if (gamepad2.right_bumper && prevGamepad2RB && wristVertical){
+            if (gamepad2.a && !prevGamepad2A && wristVertical){
                 wristHorizontal();
             }
-            else if (gamepad2.right_bumper && prevGamepad2RB && !wristVertical){
+            else if (gamepad2.a && !prevGamepad2A && !wristVertical){
                 wristVertical();
             }
 
@@ -125,15 +125,15 @@ public class Main extends LinearOpMode {
             it folds out the wrist to make sure it is in the correct orientation to intake, and it
             turns the intake on to the COLLECT mode.*/
 
-            if(gamepad1.a){ // ps4: x
-                /* This is the intaking/collecting arm position */
+            if(gamepad1.b){ // ps4: x
+                /* This is the intaking/collecting arm position for collecting samples */
                 armCollect();
                 viperCollapsed();
-                wristHorizontal();
-                intakeCollectHorizontal();
+                wristVertical();
+                intakeOpen();
             }
 
-            else if (gamepad1.b) { // ps4: circle
+            else if (gamepad1.a) { // ps4: circle
                 armClearBarrier();
             }
 
@@ -192,10 +192,10 @@ public class Main extends LinearOpMode {
             we are only incrementing it a small amount each cycle.
              */
 
-            if (gamepad1.right_bumper) {
+            if (gamepad2.right_bumper) {
                 viperDeltaTimeIncrement();
             }
-            else if (gamepad1.left_bumper) {
+            else if (gamepad2.left_bumper) {
                 viperDeltaTimeDecrement();
             }
 
@@ -228,8 +228,8 @@ public class Main extends LinearOpMode {
             loopTime = getRuntime();
             cycleTime = loopTime - oldTime;
             oldTime = loopTime;
-            prevGamepad2RB = gamepad2.right_bumper;
-            prevGamepad2LB = gamepad2.left_bumper;
+            prevGamepad2A = gamepad2.a;
+            prevGamepad2B = gamepad2.b;
             output();
         }
     }
@@ -350,7 +350,7 @@ public void initializeIO() {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.25568 * viperPosition);
+            armLiftComp = (int) (0.25568 * viperPosition * .5);
         }
         else{
             armLiftComp = 0;
@@ -392,7 +392,7 @@ public void initializeIO() {
             both triggers an equal amount, they cancel and leave the arm at zero. But if one is larger
             than the other, it "wins out". This variable is then multiplied by our FUDGE_FACTOR.
             The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
-        armPositionFudgeFactor = armDegreesToTicks(15) * (int)(gamepad1.right_trigger + (-gamepad1.left_trigger));
+        armPositionFudgeFactor = armDegreesToTicks(15) * (int)(gamepad2.right_trigger + (-gamepad2.left_trigger));
     }
     public void setArmTargetPosition() {
            /* Here we set the target position of our arm to match the variable that was selected
