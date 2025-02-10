@@ -23,6 +23,12 @@ public class AutonomousMain extends LinearOpMode {
         rightBack = hardwareMap.dcMotor.get("right_back");
         imu = hardwareMap.get(IMU.class, "imu");
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        leftFront.setDirection(DcMotor.Direction.REVERSE);
+        leftBack.setDirection(DcMotor.Direction.REVERSE);
+        leftFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFront.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBack.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
                 RevHubOrientationOnRobot.LogoFacingDirection.UP,
@@ -36,17 +42,18 @@ public class AutonomousMain extends LinearOpMode {
             return;
         }
         while (opModeIsActive()) {
-            pos = otos.getPosition();
-            leftFront.setPower(1);
-            leftBack.setPower(1);
-            rightFront.setPower(1);
-            rightBack.setPower(1);
-            Thread.sleep(500);
-            leftFront.setPower(0);
-            leftBack.setPower(0);
-            rightFront.setPower(0);
-            rightBack.setPower(0);
-            Thread.sleep(500);
+//            pos = otos.getPosition();
+//            leftFront.setPower(1);
+//            leftBack.setPower(1);
+//            rightFront.setPower(1);
+//            rightBack.setPower(1);
+//            Thread.sleep(500);
+//            leftFront.setPower(0);
+//            leftBack.setPower(0);
+//            rightFront.setPower(0);
+//            rightBack.setPower(0);
+//            Thread.sleep(500);
+
         }
     }
 
