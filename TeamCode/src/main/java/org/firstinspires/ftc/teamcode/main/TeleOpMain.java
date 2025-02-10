@@ -99,14 +99,14 @@ public class TeleOpMain extends LinearOpMode {
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
 
-            if (gamepad2.b && !prevGamepad2B && wristVertical && intakeOpened) {
+            if (gamepad2.b && !wristVertical) {
                 intakeCollectVertical();
             }
-            else if (gamepad2.b && !prevGamepad2B && !intakeOpened) {
-                intakeOpen();
-            }
-            else if (gamepad2.b && !prevGamepad2B && !wristVertical && intakeOpened) {
+            else if (gamepad2.b && wristVertical){
                 intakeCollectHorizontal();
+            }
+            else {
+                intakeOpen();
             }
 
             if (gamepad2.a && !prevGamepad2A && wristVertical){
@@ -351,9 +351,9 @@ public void initializeIO() {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.25568 * viperPosition * .5);
+            armLiftComp = (int) (0.25568 * viperPosition * 2);
         }
-        else{
+        else {
             armLiftComp = 0;
         }
     }
@@ -412,30 +412,30 @@ public void initializeIO() {
         }
         if ((!viperMotor.isBusy()) && viperMotor.getCurrentPosition() == 0){ // if the lift motor is not busy retracting
             viperRetracted = true; // we set the retract lift variable to false
-            ((DcMotorEx) armMotor).setVelocity(2500); // 1500
+            ((DcMotorEx) armMotor).setVelocity(1500); // 2500
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
         }
     }
 
 //    ---------------- | intake system | -----------------------------------------------------------
     public void intakeCollectHorizontal() {
-        intake.setPosition(0.66); // intake closed
+        intake.setPosition(1); // intake closed
         intakeOpened = false;
     }
     public void intakeCollectVertical() {
-        intake.setPosition(0.75); // intake closed
+        intake.setPosition(.65); // intake closed
         intakeOpened = false;
     }
     public void intakeOpen() {
-        intake.setPosition(0.53); // intake open
+        intake.setPosition(0); // intake open
         intakeOpened = true;
     }
     public void wristVertical() {
-        wrist.setPosition(.2); // 0.43
+        wrist.setPosition(1); // 0.43
         wristVertical = true;
     }
     public void wristHorizontal() {
-        wrist.setPosition(.54);
+        wrist.setPosition(0);
         wristVertical = false;
     }
 

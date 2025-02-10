@@ -54,7 +54,7 @@ public class ServoPositionHelper extends LinearOpMode {
     // Declare OpMode member.
     private Servo servo1;
     private Servo servo2;
-    String servoName = "wrist_servo";
+    String servoName = "intake_servo";
 
     /*
      * Create a variable which we will modify with our code. Eventually we will instruct
