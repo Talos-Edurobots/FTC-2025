@@ -67,7 +67,7 @@ public class TeleOpMain extends LinearOpMode {
     boolean prevGamepad2A;
     boolean prevGamepad2B;
     SparkFunOTOS.Pose2D pos;
-    int capturedLiftPosition;
+    int capturedViperPosition;
 
     @Override
     public void runOpMode() {
@@ -125,7 +125,7 @@ public class TeleOpMain extends LinearOpMode {
             it folds out the wrist to make sure it is in the correct orientation to intake, and it
             turns the intake on to the COLLECT mode.*/
 
-            if(gamepad1.b){ // ps4: x
+            if(gamepad1.b){ // ps4: o
                 /* This is the intaking/collecting arm position for collecting samples */
                 armCollect();
                 viperCollapsed();
@@ -133,7 +133,7 @@ public class TeleOpMain extends LinearOpMode {
                 intakeOpen();
             }
 
-            else if (gamepad1.a) { // ps4: circle
+            else if (gamepad1.a) { // ps4: x
                 armClearBarrier();
             }
 
@@ -351,7 +351,7 @@ public void initializeIO() {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.25568 * viperPosition * 2);
+            armLiftComp = (int) (0.25568 * viperPosition);
         }
         else {
             armLiftComp = 0;
@@ -405,15 +405,22 @@ public void initializeIO() {
         armMotor.setTargetPosition(armPosition + armPositionFudgeFactor + armLiftComp);
     }
     public void runArm() {
+        if (!viperRetracted && !viperMotor.isBusy()) {
+            capturedViperPosition = viperMotor.getCurrentPosition(); // we capture the lift position
+        }
         // here we check if the lift should be retracted.
-        if (!viperRetracted) {
+        if (!viperRetracted && viperMotor.isBusy()) {
             viperCollapsed(); // we set the lift position to be collapsed
             runViper(); // run the motor
         }
-        if ((!viperMotor.isBusy()) && viperMotor.getCurrentPosition() == 0){ // if the lift motor is not busy retracting
-            viperRetracted = true; // we set the retract lift variable to false
+        if (viperMotor.getCurrentPosition() <= 100){ // if the lift motor is not busy retracting
+            viperRetracted = true; // we set the retract lift variable to true
             ((DcMotorEx) armMotor).setVelocity(1500); // 2500
             armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
+        }
+        if (armMotor.getCurrentPosition() >= armMotor.getTargetPosition() - 100 || armPosition <= armMotor.getTargetPosition() + 100){
+            viperMotor.setTargetPosition(capturedViperPosition);
+            runViper();
         }
     }
 
