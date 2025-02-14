@@ -98,23 +98,36 @@ public class TeleOpMain extends LinearOpMode {
             at the same time. "a" will win over and the intake will turn on. If we just had
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
-
-            if (gamepad2.b && !wristVertical) {
-                intakeCollectVertical();
-            }
-            else if (gamepad2.b && wristVertical){
-                intakeCollectHorizontal();
-            }
-            else {
-                intakeOpen();
-            }
-
-            if (gamepad2.a && !prevGamepad2A && wristVertical){
-                wristHorizontal();
-            }
-            else if (gamepad2.a && !prevGamepad2A && !wristVertical){
+            if (gamepad2.dpad_down){
                 wristVertical();
             }
+            else if (gamepad2.dpad_up){
+                wristHorizontal();
+            }
+
+            if (gamepad2.left_bumper || gamepad2.right_bumper){
+                intakeOpen();
+            }
+            else {
+                intakeCollect();
+            }
+
+//            if (gamepad2.b && !wristVertical) {
+//                intakeCollect();
+//            }
+//            else if (gamepad2.b && wristVertical){
+//                intakeCollect();
+//            }
+//            else {
+//                intakeOpen();
+//            }
+
+//            if (gamepad2.a && !prevGamepad2A && wristVertical){
+//                wristHorizontal();
+//            }
+//            else if (gamepad2.a && !prevGamepad2A && !wristVertical){
+//                wristVertical();
+//            }
 
             configureFudge();
 
@@ -125,26 +138,24 @@ public class TeleOpMain extends LinearOpMode {
             it folds out the wrist to make sure it is in the correct orientation to intake, and it
             turns the intake on to the COLLECT mode.*/
 
-            if(gamepad1.b){ // ps4: o
+            if(gamepad2.b){ // ps4: o
                 /* This is the intaking/collecting arm position for collecting samples */
                 armCollect();
                 viperCollapsed();
-                wristVertical();
-                intakeOpen();
             }
 
-            else if (gamepad1.a) { // ps4: x
+            else if (gamepad2.a) { // ps4: x
                 armClearBarrier();
             }
 
-            else if (gamepad1.x){
+            else if (gamepad2.x){
                 /* This is the correct height to score the sample in the HIGH BASKET */
                 viperRetracted = false;
                 armScoreSampleInHigh();
                 viperScoreInHigh();
             }
 
-            else if (gamepad1.dpad_left) {
+            else if (gamepad2.dpad_left) {
                     /* This turns off the intake, folds in the wrist, and moves the arm
                     back to folded inside the robot. This is also the starting configuration */
                 armCollapsed();
@@ -152,7 +163,7 @@ public class TeleOpMain extends LinearOpMode {
                 wristVertical();
             }
 
-            else if (gamepad1.dpad_right){
+            else if (gamepad2.dpad_right){
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armScoreSpecimen();
                 wristVertical();
@@ -192,12 +203,13 @@ public class TeleOpMain extends LinearOpMode {
             we are only incrementing it a small amount each cycle.
              */
 
-            if (gamepad2.right_bumper) {
-                viperDeltaTimeIncrement();
-            }
-            else if (gamepad2.left_bumper) {
-                viperDeltaTimeDecrement();
-            }
+//            if (gamepad2.right_trigger >= .1) {
+//                viperDeltaTimeIncrement();
+//            }
+//            else if (gamepad2.left_trigger >= .1) {
+//                viperDeltaTimeDecrement();
+//            }
+            viperDeltaTime();
 
             viperNormalization();
             setViperTargetPosition();
@@ -437,6 +449,9 @@ public void initializeIO() {
         intake.setPosition(0); // intake open
         intakeOpened = true;
     }
+    public void intakeCollect() {
+        intake.setPosition(1);
+    }
     public void wristVertical() {
         wrist.setPosition(1); // 0.43
         wristVertical = true;
@@ -488,6 +503,9 @@ public void initializeIO() {
     public void viperDeltaTimeDecrement() {
         viperPosition -= (int) (5000 * cycleTime); // 3600
         setViperTargetPosition();
+    }
+    public void viperDeltaTime() {
+        viperPosition += (int) ((int) (5000 * cycleTime) * gamepad2.right_stick_y); // 3600
     }
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
