@@ -17,12 +17,11 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 /*
  * This is (mostly) the OpMode used in the goBILDA Robot in 3 Days for the 24-25 Into The Deep FTC Season.
  * https://youtube.com/playlist?list=PLpytbFEB5mLcWxf6rOHqbmYjDi9BbK00p&si=NyQLwyIkcZvZEirP (playlist of videos)
- * I've gone through and added comments for clarity. But most of the code remains the same.
  * This is very much based on the code for the Starter Kit Robot for the 24-25 season. Those resources can be found here:
  * https://www.gobilda.com/ftc-starter-bot-resource-guide-into-the-deep/
  *
  * There are three main additions to the starter kit bot code, mecanum drive, a linear slide for reaching
- * into the submersible, and a linear slide to hang (which we didn't end up using)
+ * into the submersible.
  *
  * the drive system is all 5203-2402-0019 (312 RPM Yellow Jacket Motors) and it is based on a Strafer chassis
  * The arm shoulder takes the design from the starter kit robot. So it uses the same 117rpm (223rpm) motor with an
@@ -34,6 +33,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * (PS GM0 is a world class resource, if you've got 5 mins and nothing to do, read some GM0!)
  * https://gm0.org/en/latest/docs/software/tutorials/mecanum-drive.html#field-centric
  *
+ * Odometry is based on a Sparkfun Optical odometry sensor
  */
 
 
@@ -71,6 +71,7 @@ public class TeleOpMain extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        // initialization and odometry sensor configuration
         initializeIO();
         configureOtos();
         // Retrieve the IMU from the hardware map
@@ -80,23 +81,27 @@ public class TeleOpMain extends LinearOpMode {
         /* Run until the driver presses stop */
         while (opModeIsActive())
         {
+            //strfing
             straferMovement();
+            // arm handling
             setArmLiftComp();
-
-
+            // get current position from optical sensor
             pos = otos.getPosition();
-            /* Here we handle the three buttons that have direct control of the intake speed.
-            These control the continuous rotation servo that pulls elements into the robot,
-            If the user presses A, it sets the intake power to the final variable that
-            holds the speed we want to collect at.
-            If the user presses X, it sets the servo to Off.
-            And if the user presses B it reveres the servo to spit out the element.*/
+            
+            /* Two gamepads are used. Gamepad1 is used for controlling the strafing movement of the robot 
+            and the buttons for controlling the proccess for hunging the robot form the low bar.
+            Gamepad2 controls all the arm and viper movements.*/
+            
+            /*Here we handle the buttons that have direct control of the wrist position by Gamepad2.
+            Wrist vertical is meant for collecting samples, while wrist horizontal for collecting specimens
+            If the user presses  on Gamepad2, it sets the wrist to vertical position for sample collection.
+            If the user presses dpad_up, it sets the wrist back to horizontal position for specimen collection.
 
             /* TECH TIP: If Else statement:
-            We're using an else if statement on "gamepad1.x" and "gamepad1.b" just in case
-            multiple buttons are pressed at the same time. If the driver presses both "a" and "x"
-            at the same time. "a" will win over and the intake will turn on. If we just had
-            three if statements, then it will set the intake servo's power to multiple speeds in
+            We're using an else if statement on "gamepad2.dpad_down" and "gamepad2.dpad_up" just in case
+            multiple buttons are pressed at the same time. If the driver presses both 
+            at the same time. "dpad_down" will win over. If we just had
+             if statements, then it will set the intake servo's power to multiple positions in
             one cycle. Which can cause strange behavior. */
             if (gamepad2.dpad_down){
                 wristVertical();
@@ -105,6 +110,8 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
             }
 
+            /* Controls the intake servo position state so that intake is open or closed. At normal conditions
+            intake is closed and if Gamepad2 left bumper is pressed the intake opens.*/
             if (gamepad2.left_bumper){
                 intakeOpen();
             }
@@ -129,23 +136,25 @@ public class TeleOpMain extends LinearOpMode {
 //                wristVertical();
 //            }
 
+            // Configures fudge movement of the arm motor for easier handling position corrections of the arm 
             configureFudge();
 
             /* Here we implement a set of if else statements to set our arm to different scoring positions.
-            We check to see if a specific button is pressed, and then move the arm (and sometimes
-            intake and wrist) to match. For example, if we click the right bumper we want the robot
-            to start collecting. So it moves the armPosition to the ARM_COLLECT position,
-            it folds out the wrist to make sure it is in the correct orientation to intake, and it
-            turns the intake on to the COLLECT mode.*/
+            We check to see if a specific button is pressed, and then move the arm (and sometimes viper,
+            intake and wrist) to match. */
 
-            if(gamepad2.b){ // ps4: o
-                /* This is the intaking/collecting arm position for collecting samples */
+            if(gamepad2.b){ // b in Xbox and O button in PS4 controllers
+                /* This is the initial position for the robot. Arm is completely down
+                and viper completely collapsed.*/
                 armCollect();
                 viperCollapsed();
             }
 
-            else if (gamepad2.a) { // ps4: x
+            else if (gamepad2.a) { // a in Xbox and X in PS4
+               /* Preparing the arm to enter the submersible. Arm is lift up
+                5 degrees to overcome the submersible  barrier and viper collapses to its initial state. */
                 armClearBarrier();
+                viperCollapsed();
             }
 
             else if (gamepad2.x){
