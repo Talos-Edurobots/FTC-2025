@@ -152,7 +152,7 @@ public class TeleOpMain extends LinearOpMode {
                 viperCollapsed();
             }
 
-            else if (gamepad2.a) { // ps4: x
+            else if (gamepad2.b) { // ps4: x
                 armClearBarrier();
             }
 
