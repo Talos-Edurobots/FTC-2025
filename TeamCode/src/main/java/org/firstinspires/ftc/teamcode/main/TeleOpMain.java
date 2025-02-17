@@ -68,6 +68,7 @@ public class TeleOpMain extends LinearOpMode {
     boolean prevGamepad2B;
     SparkFunOTOS.Pose2D pos;
     int capturedViperPosition;
+    double straferSpeedFactor = 1.7;
 
     @Override
     public void runOpMode() {
@@ -115,7 +116,7 @@ public class TeleOpMain extends LinearOpMode {
             if (gamepad2.right_bumper) {
                 viperCollapsed();
             }
-            else if (gamepad2.y) {
+            else if (gamepad2.x) {
                 viperScoreInHigh();
             }
 
@@ -145,7 +146,7 @@ public class TeleOpMain extends LinearOpMode {
             it folds out the wrist to make sure it is in the correct orientation to intake, and it
             turns the intake on to the COLLECT mode.*/
 
-            if(gamepad2.b){ // ps4: o
+            if(gamepad2.a){ // ps4: o
                 /* This is the intaking/collecting arm position for collecting samples */
                 armCollect();
                 viperCollapsed();
@@ -155,11 +156,10 @@ public class TeleOpMain extends LinearOpMode {
                 armClearBarrier();
             }
 
-            else if (gamepad2.x){
+            else if (gamepad2.y){
                 /* This is the correct height to score the sample in the HIGH BASKET */
                 viperRetracted = false;
                 armScoreSampleInHigh();
-                viperScoreInHigh();
             }
 
             else if (gamepad2.dpad_left) {
@@ -370,7 +370,7 @@ public void initializeIO() {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0.25568 * viperPosition);
+            armLiftComp = (int) (0 * viperPosition); // 0.25568
         }
         else {
             armLiftComp = 0;
@@ -516,7 +516,7 @@ public void initializeIO() {
         setViperTargetPosition();
     }
     public void viperDeltaTime() {
-        viperPosition += (int) ((int) (5000 * cycleTime) * gamepad2.right_stick_y); // 3600
+        viperPosition -= (int) ((int) (5000 * cycleTime) * gamepad2.right_stick_y); // 3600
     }
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
