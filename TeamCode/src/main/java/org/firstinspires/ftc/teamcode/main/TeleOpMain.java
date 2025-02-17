@@ -106,14 +106,14 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
             }
 
-            if (gamepad2.left_bumper){
+            if (gamepad2.right_bumper){
                 intakeOpen();
             }
             else {
                 intakeCollect();
             }
 
-            if (gamepad2.right_bumper) {
+            if (gamepad2.left_bumper) {
                 viperCollapsed();
             }
             else if (gamepad2.x) {
@@ -516,7 +516,7 @@ public void initializeIO() {
         setViperTargetPosition();
     }
     public void viperDeltaTime() {
-        viperPosition -= (int) ((int) (5000 * cycleTime) * gamepad2.right_stick_y); // 3600
+        viperPosition -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
     }
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
