@@ -17,11 +17,12 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 /*
  * This is (mostly) the OpMode used in the goBILDA Robot in 3 Days for the 24-25 Into The Deep FTC Season.
  * https://youtube.com/playlist?list=PLpytbFEB5mLcWxf6rOHqbmYjDi9BbK00p&si=NyQLwyIkcZvZEirP (playlist of videos)
+ * I've gone through and added comments for clarity. But most of the code remains the same.
  * This is very much based on the code for the Starter Kit Robot for the 24-25 season. Those resources can be found here:
  * https://www.gobilda.com/ftc-starter-bot-resource-guide-into-the-deep/
  *
  * There are three main additions to the starter kit bot code, mecanum drive, a linear slide for reaching
- * into the submersible.
+ * into the submersible, and a linear slide to hang (which we didn't end up using)
  *
  * the drive system is all 5203-2402-0019 (312 RPM Yellow Jacket Motors) and it is based on a Strafer chassis
  * The arm shoulder takes the design from the starter kit robot. So it uses the same 117rpm (223rpm) motor with an
@@ -33,7 +34,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * (PS GM0 is a world class resource, if you've got 5 mins and nothing to do, read some GM0!)
  * https://gm0.org/en/latest/docs/software/tutorials/mecanum-drive.html#field-centric
  *
- * Odometry is based on a Sparkfun Optical odometry sensor
  */
 
 
@@ -50,8 +50,6 @@ public class TeleOpMain extends LinearOpMode {
     public Servo        intake          = null; //the active intake servo
     public Servo        wrist           = null; //the wrist servo
     public SparkFunOTOS otos            = null;
-
-
 
     /* Variables that are used to set the arm to a specific position */
     int armPosition;
@@ -73,7 +71,6 @@ public class TeleOpMain extends LinearOpMode {
 
     @Override
     public void runOpMode() {
-        // initialization and odometry sensor configuration
         initializeIO();
         configureOtos();
         // Retrieve the IMU from the hardware map
@@ -83,27 +80,23 @@ public class TeleOpMain extends LinearOpMode {
         /* Run until the driver presses stop */
         while (opModeIsActive())
         {
-            //strfing
             straferMovement();
-            // arm handling
             setArmLiftComp();
-            // get current position from optical sensor
+
+
             pos = otos.getPosition();
-
-            /* Two gamepads are used. Gamepad1 is used for controlling the strafing movement of the robot
-            and the buttons for controlling the proccess for hunging the robot form the low bar.
-            Gamepad2 controls all the arm and viper movements.*/
-
-            /*Here we handle the buttons that have direct control of the wrist position by Gamepad2.
-            Wrist vertical is meant for collecting samples, while wrist horizontal for collecting specimens
-            If the user presses  on Gamepad2, it sets the wrist to vertical position for sample collection.
-            If the user presses dpad_up, it sets the wrist back to horizontal position for specimen collection.
+            /* Here we handle the three buttons that have direct control of the intake speed.
+            These control the continuous rotation servo that pulls elements into the robot,
+            If the user presses A, it sets the intake power to the final variable that
+            holds the speed we want to collect at.
+            If the user presses X, it sets the servo to Off.
+            And if the user presses B it reveres the servo to spit out the element.*/
 
             /* TECH TIP: If Else statement:
-            We're using an else if statement on "gamepad2.dpad_down" and "gamepad2.dpad_up" just in case
-            multiple buttons are pressed at the same time. If the driver presses both
-            at the same time. "dpad_down" will win over. If we just had
-             if statements, then it will set the intake servo's power to multiple positions in
+            We're using an else if statement on "gamepad1.x" and "gamepad1.b" just in case
+            multiple buttons are pressed at the same time. If the driver presses both "a" and "x"
+            at the same time. "a" will win over and the intake will turn on. If we just had
+            three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
             if (gamepad2.dpad_down){
                 wristVertical();
@@ -112,9 +105,7 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
             }
 
-            /* Controls the intake servo position state so that intake is open or closed. At normal conditions
-            intake is closed and if Gamepad2 left bumper is pressed the intake opens.*/
-            if (gamepad2.left_bumper){
+            if (gamepad2.left_bumper || gamepad2.right_bumper){
                 intakeOpen();
             }
             else {
@@ -138,37 +129,30 @@ public class TeleOpMain extends LinearOpMode {
 //                wristVertical();
 //            }
 
-            // Configures fudge movement of the arm motor for easier handling position corrections of the arm
             configureFudge();
 
             /* Here we implement a set of if else statements to set our arm to different scoring positions.
-            We check to see if a specific button is pressed, and then move the arm (and sometimes viper,
-            intake and wrist) to match. */
+            We check to see if a specific button is pressed, and then move the arm (and sometimes
+            intake and wrist) to match. For example, if we click the right bumper we want the robot
+            to start collecting. So it moves the armPosition to the ARM_COLLECT position,
+            it folds out the wrist to make sure it is in the correct orientation to intake, and it
+            turns the intake on to the COLLECT mode.*/
 
-            if(gamepad2.b){ // b in Xbox and O button in PS4 controllers
-                /* This is the initial position for the robot. Arm is completely down
-                and viper completely collapsed.*/
+            if(gamepad2.b){ // ps4: o
+                /* This is the intaking/collecting arm position for collecting samples */
                 armCollect();
                 viperCollapsed();
             }
 
-            else if (gamepad2.a) { // a in Xbox and X in PS4
-               /* Preparing the arm to enter the submersible. Arm is lift up
-                5 degrees to overcome the submersible  barrier and viper collapses to its initial state. */
+            else if (gamepad2.a) { // ps4: x
                 armClearBarrier();
-                viperCollapsed();
             }
 
             else if (gamepad2.x){
                 /* This is the correct height to score the sample in the HIGH BASKET */
                 viperRetracted = false;
                 armScoreSampleInHigh();
-            }
-            else if (gamepad2.y){
                 viperScoreInHigh();
-            }
-            else if (gamepad2.right_bumper){
-                viperCollapsed();
             }
 
             else if (gamepad2.dpad_left) {
@@ -262,66 +246,64 @@ public class TeleOpMain extends LinearOpMode {
         }
     }
 
-    //    ---------------- | initialization, output | ----------------------------------------------------------
-    public void initializeIO() {
-        /* Define and Initialize Motors */
-        leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
-        leftBackDrive   = hardwareMap.dcMotor.get("left_back");
-        rightFrontDrive = hardwareMap.dcMotor.get("right_front");
-        rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-        viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
-        armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+//    ---------------- | initialization, output | ----------------------------------------------------------
+public void initializeIO() {
+    /* Define and Initialize Motors */
+    leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
+    leftBackDrive   = hardwareMap.dcMotor.get("left_back");
+    rightFrontDrive = hardwareMap.dcMotor.get("right_front");
+    rightBackDrive  = hardwareMap.dcMotor.get("right_back");
+    viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
+    armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
+    otos = hardwareMap.get(SparkFunOTOS.class, "otos");
 
        /*
        we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
        drive motors to go forward.
         */
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+    leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+    leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
         much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
         stops much quicker. */
-        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+    viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+    /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
+    ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
         /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
         If you do not have the encoder plugged into this motor, it will not run in this code. */
-        armCollapsed();
-        viperCollapsed();
-        armMotor.setTargetPosition(0);
-        armMotor.setDirection(DcMotor.Direction.REVERSE);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    armCollapsed();
+    viperCollapsed();
+    armMotor.setTargetPosition(0);
+    armMotor.setDirection(DcMotor.Direction.REVERSE);
+    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        viperMotor.setTargetPosition(0);
-        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+    viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+    viperMotor.setTargetPosition(0);
+    viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+    viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        /* Define and initialize servos.*/
-        intake = hardwareMap.get(Servo.class, "intake_servo");
-        wrist  = hardwareMap.get(Servo.class, "wrist_servo");
+    /* Define and initialize servos.*/
+    intake = hardwareMap.get(Servo.class, "intake_servo");
+    wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
+    /* Make sure that the intake is off, and the wrist is folded in. */
 
+    wristHorizontal();
 
-        /* Make sure that the intake is off, and the wrist is folded in. */
-
-        wristHorizontal();
-
-        /* Send telemetry message to signify robot waiting */
-        telemetry.addLine("Robot Ready.");
-        telemetry.update();
-    }
+    /* Send telemetry message to signify robot waiting */
+    telemetry.addLine("Robot Ready.");
+    telemetry.update();
+}
 
     public void initializeIMU() {
         imu = hardwareMap.get(IMU.class, "imu");
@@ -353,7 +335,7 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.update();
     }
 
-    // ---------------- | arm | ------------------------------------------------------------------------
+// ---------------- | arm | ------------------------------------------------------------------------
     public int armDegreesToTicks(double degrees) {
         return (int) (
                 28 // number of encoder ticks per rotation of the bare motor
@@ -434,7 +416,7 @@ public class TeleOpMain extends LinearOpMode {
         //
         armMotor.setTargetPosition(armPosition + armPositionFudgeFactor + armLiftComp);
     }
-    public void runArmSec() {
+    public void runArm() {
         if (!viperRetracted && !viperMotor.isBusy()) {
             capturedViperPosition = viperMotor.getCurrentPosition(); // we capture the lift position
         }
@@ -453,18 +435,14 @@ public class TeleOpMain extends LinearOpMode {
             runViper();
         }
     }
-    public void runArm() {
-        ((DcMotorEx) armMotor).setVelocity(1000); // 2500
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
-    }
 
-    //    ---------------- | intake system | -----------------------------------------------------------
+//    ---------------- | intake system | -----------------------------------------------------------
     public void intakeCollectHorizontal() {
         intake.setPosition(1); // intake closed
         intakeOpened = false;
     }
     public void intakeCollectVertical() {
-        intake.setPosition(1); // intake closed
+        intake.setPosition(.65); // intake closed
         intakeOpened = false;
     }
     public void intakeOpen() {
@@ -483,7 +461,7 @@ public class TeleOpMain extends LinearOpMode {
         wristVertical = false;
     }
 
-    //    ---------------- | viper slide | -------------------------------------------------------------
+//    ---------------- | viper slide | -------------------------------------------------------------
     public int viperMotorMmToTicks(double mm) {
         /*
          * 312 rpm motor: 537.7 ticks per revolution
@@ -548,7 +526,7 @@ public class TeleOpMain extends LinearOpMode {
         ((DcMotorEx) viperMotor).setVelocity(5000); // 3200 velocity of the viper slide 200
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
-    //    ---------------- | strafer movement, otos | --------------------------------------------------
+//    ---------------- | strafer movement, otos | --------------------------------------------------
     public void straferMovement(){
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
@@ -572,7 +550,7 @@ public class TeleOpMain extends LinearOpMode {
         // Denominator is the largest motor power (absolute value) or 1
         // This ensures all the powers maintain the same ratio,
         // but only if at least one is out of the range [-1, 1]
-        double denominator = 1.5g*Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
         double frontLeftPower = (rotY + rotX + rx) / denominator;
         double backLeftPower = (rotY - rotX + rx) / denominator;
         double frontRightPower = (rotY - rotX - rx) / denominator;
@@ -692,6 +670,7 @@ public class TeleOpMain extends LinearOpMode {
  *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *   SOFTWARE.
  */
+
 
 
 
