@@ -105,11 +105,18 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
             }
 
-            if (gamepad2.left_bumper || gamepad2.right_bumper){
+            if (gamepad2.left_bumper){
                 intakeOpen();
             }
             else {
                 intakeCollect();
+            }
+
+            if (gamepad2.right_bumper) {
+                viperCollapsed();
+            }
+            else if (gamepad2.y) {
+                viperScoreInHigh();
             }
 
 //            if (gamepad2.b && !wristVertical) {
@@ -416,7 +423,7 @@ public void initializeIO() {
         //
         armMotor.setTargetPosition(armPosition + armPositionFudgeFactor + armLiftComp);
     }
-    public void runArm() {
+    public void runArmSeq() {
         if (!viperRetracted && !viperMotor.isBusy()) {
             capturedViperPosition = viperMotor.getCurrentPosition(); // we capture the lift position
         }
@@ -434,6 +441,10 @@ public void initializeIO() {
             viperMotor.setTargetPosition(capturedViperPosition);
             runViper();
         }
+    }
+    public void runArm() {
+        ((DcMotorEx) armMotor).setVelocity(1500); // 2500
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
     }
 
 //    ---------------- | intake system | -----------------------------------------------------------
