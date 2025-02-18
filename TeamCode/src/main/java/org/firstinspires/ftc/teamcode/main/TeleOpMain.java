@@ -17,15 +17,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 /*
  * This is (mostly) the OpMode used in the goBILDA Robot in 3 Days for the 24-25 Into The Deep FTC Season.
  * https://youtube.com/playlist?list=PLpytbFEB5mLcWxf6rOHqbmYjDi9BbK00p&si=NyQLwyIkcZvZEirP (playlist of videos)
- * I've gone through and added comments for clarity. But most of the code remains the same.
  * This is very much based on the code for the Starter Kit Robot for the 24-25 season. Those resources can be found here:
  * https://www.gobilda.com/ftc-starter-bot-resource-guide-into-the-deep/
  *
  * There are three main additions to the starter kit bot code, mecanum drive, a linear slide for reaching
- * into the submersible, and a linear slide to hang (which we didn't end up using)
+ * into the submersible.
  *
  * the drive system is all 5203-2402-0019 (312 RPM Yellow Jacket Motors) and it is based on a Strafer chassis
- * The arm shoulder takes the design from the starter kit robot. So it uses the same 117rpm (223rpm) motor with an
+ * The arm shoulder takes the design from the starter kit robot. So it uses the same 117rpm motor with an
  * external 5:1 reduction
  *
  * The drivetrain is set up as "field centric" with the internal control hub IMU. This means
@@ -41,33 +40,37 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 //@Disabled
 public class TeleOpMain extends LinearOpMode {
     /* Declare OpMode members. */
-    public DcMotor      leftFrontDrive  = null; //the left drivetrain motor
-    public DcMotor      rightFrontDrive = null; //the right drivetrain motor
-    public DcMotor      leftBackDrive   = null;
-    public DcMotor      rightBackDrive  = null;
+    public DcMotor      leftFrontDrive  = null; //the left front drivetrain motor
+    public DcMotor      rightFrontDrive = null; //the right front drivetrain motor
+    public DcMotor      leftBackDrive   = null; //the left back drivetrain motor
+    public DcMotor      rightBackDrive  = null; //the right bacck drivetrain motor
     public DcMotor      armMotor        = null; //the arm motor
     public DcMotor      viperMotor      = null; // the viper slide motor
     public Servo        intake          = null; //the active intake servo
     public Servo        wrist           = null; //the wrist servo
-    public SparkFunOTOS otos            = null;
+    public SparkFunOTOS otos            = null; // the optical odometry sensor
 
-    /* Variables that are used to set the arm to a specific position */
+    /* Variables that are used to set the arm and viper to a specific position */
     int armPosition;
     int armPositionFudgeFactor;
     final int MAX_VIPER_POSITION = viperMotorMmToTicks(480);
     int viperPosition;
-    double cycleTime = 0;
-    double loopTime = 0;
-    double oldTime = 0;
     int armLiftComp = 0;
     IMU imu;
     boolean viperRetracted;
+    int capturedViperPosition;
     boolean wristVertical;
     boolean intakeOpened;
+    // loop cycle time variants
+    double cycleTime = 0;
+    double loopTime = 0;
+    double oldTime = 0;
+    // gamepad variables
     boolean prevGamepad2A;
     boolean prevGamepad2B;
+    //odometry sensor
     SparkFunOTOS.Pose2D pos;
-    int capturedViperPosition;
+    // strafer speed compensation factor
     double straferSpeedFactor = 1.7;
 
     @Override
@@ -84,14 +87,9 @@ public class TeleOpMain extends LinearOpMode {
             straferMovement();
             setArmLiftComp();
 
-
+            // reading current position of the optical odometry sensor
             pos = otos.getPosition();
-            /* Here we handle the three buttons that have direct control of the intake speed.
-            These control the continuous rotation servo that pulls elements into the robot,
-            If the user presses A, it sets the intake power to the final variable that
-            holds the speed we want to collect at.
-            If the user presses X, it sets the servo to Off.
-            And if the user presses B it reveres the servo to spit out the element.*/
+         
 
             /* TECH TIP: If Else statement:
             We're using an else if statement on "gamepad1.x" and "gamepad1.b" just in case
@@ -120,22 +118,6 @@ public class TeleOpMain extends LinearOpMode {
                 viperScoreInHigh();
             }
 
-//            if (gamepad2.b && !wristVertical) {
-//                intakeCollect();
-//            }
-//            else if (gamepad2.b && wristVertical){
-//                intakeCollect();
-//            }
-//            else {
-//                intakeOpen();
-//            }
-
-//            if (gamepad2.a && !prevGamepad2A && wristVertical){
-//                wristHorizontal();
-//            }
-//            else if (gamepad2.a && !prevGamepad2A && !wristVertical){
-//                wristVertical();
-//            }
 
             configureFudge();
 
@@ -292,11 +274,10 @@ public void initializeIO() {
     /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
     ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
-        /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
+        /* Before starting the arm and viper motors. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
         If you do not have the encoder plugged into this motor, it will not run in this code. */
-    armCollapsed();
-    viperCollapsed();
+  
     armMotor.setTargetPosition(0);
     armMotor.setDirection(DcMotor.Direction.REVERSE);
     armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
@@ -307,12 +288,14 @@ public void initializeIO() {
     viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
+   //   armCollapsed();
+    //  viperCollapsed();
+
     /* Define and initialize servos.*/
     intake = hardwareMap.get(Servo.class, "intake_servo");
     wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
-    /* Make sure that the intake is off, and the wrist is folded in. */
-
+    /* Starting position with the wrist horizontal */
     wristHorizontal();
 
     /* Send telemetry message to signify robot waiting */
