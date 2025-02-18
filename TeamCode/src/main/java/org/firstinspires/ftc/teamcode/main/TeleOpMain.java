@@ -228,6 +228,11 @@ public class TeleOpMain extends LinearOpMode {
                 telemetry.addLine("ARM MOTOR EXCEEDED CURRENT LIMIT!!");
             }
 
+               /* Check to see if our viper motor is over the current limit, and report via telemetry. */
+            if (((DcMotorEx) viperMotor).isOverCurrent()) {
+                telemetry.addLine("VIPER MOTOR EXCEEDED CURRENT LIMIT!!");
+            }
+
             /* at the very end of the stream, we added a linear actuator kit to try to hang the robot on.
              * it didn't end up working... But here's the code we run it with. It just sets the motor
              * power to match the inverse of the left stick y.
@@ -283,6 +288,9 @@ public void initializeIO() {
 
     /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
     ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+    /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
+    ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
         /* Before starting the armMotor. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
@@ -534,7 +542,7 @@ public void initializeIO() {
         viperMotor.setTargetPosition(viperPosition);
     }
     public void runViper() {
-        ((DcMotorEx) viperMotor).setVelocity(5000); // 3200 velocity of the viper slide 200
+        ((DcMotorEx) viperMotor).setVelocity(3200); // 3200 velocity of the viper slide 200
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 //    ---------------- | strafer movement, otos | --------------------------------------------------
