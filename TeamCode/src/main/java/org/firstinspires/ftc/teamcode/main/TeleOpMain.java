@@ -30,9 +30,6 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  * The drivetrain is set up as "field centric" with the internal control hub IMU. This means
  * when you push the stick forward, regardless of robot orientation, the robot drives away from you.
  * We "took inspiration" (copy-pasted) the drive code from this GM0 page
- * (PS GM0 is a world class resource, if you've got 5 mins and nothing to do, read some GM0!)
- * https://gm0.org/en/latest/docs/software/tutorials/mecanum-drive.html#field-centric
- *
  */
 
 
@@ -57,7 +54,6 @@ public class TeleOpMain extends LinearOpMode {
     int viperPosition;
     int armLiftComp = 0;
     IMU imu;
-    boolean viperRetracted;
     int capturedViperPosition;
     boolean wristVertical;
     boolean intakeOpened;
@@ -65,9 +61,6 @@ public class TeleOpMain extends LinearOpMode {
     double cycleTime = 0;
     double loopTime = 0;
     double oldTime = 0;
-    // gamepad variables
-    boolean prevGamepad2A;
-    boolean prevGamepad2B;
     //odometry sensor
     SparkFunOTOS.Pose2D pos;
     // strafer speed compensation factor
@@ -288,8 +281,8 @@ public void initializeIO() {
     viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-   //   armCollapsed();
-    //  viperCollapsed();
+    armCollapsed();
+    viperCollapsed();
 
     /* Define and initialize servos.*/
     intake = hardwareMap.get(Servo.class, "intake_servo");
@@ -414,25 +407,7 @@ public void initializeIO() {
         //
         armMotor.setTargetPosition(armPosition + armPositionFudgeFactor + armLiftComp);
     }
-    public void runArmSeq() {
-        if (!viperRetracted && !viperMotor.isBusy()) {
-            capturedViperPosition = viperMotor.getCurrentPosition(); // we capture the lift position
-        }
-        // here we check if the lift should be retracted.
-        if (!viperRetracted && viperMotor.isBusy()) {
-            viperCollapsed(); // we set the lift position to be collapsed
-            runViper(); // run the motor
-        }
-        if (viperMotor.getCurrentPosition() <= 100){ // if the lift motor is not busy retracting
-            viperRetracted = true; // we set the retract lift variable to true
-            ((DcMotorEx) armMotor).setVelocity(1500); // 2500
-            armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
-        }
-        if (armMotor.getCurrentPosition() >= armMotor.getTargetPosition() - 100 || armPosition <= armMotor.getTargetPosition() + 100){
-            viperMotor.setTargetPosition(capturedViperPosition);
-            runViper();
-        }
-    }
+
     public void runArm() {
         ((DcMotorEx) armMotor).setVelocity(1500); // 2500
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
@@ -484,27 +459,21 @@ public void initializeIO() {
     }
     public void setViperPosition(int ticks) {
         viperPosition = ticks;
-        setViperTargetPosition();
     }
     public void viperScoreInLow() {
         viperPosition = 0;
-        setViperTargetPosition();
     }
     public void viperScoreInHigh() {
         viperPosition = viperMotorMmToTicks(480);
-        setViperTargetPosition();
     }
     public void viperCollapsed() {
         viperPosition = 0;
-        setViperTargetPosition();
     }
     public void viperDeltaTimeIncrement() {
         viperPosition += (int) (5000 * cycleTime); // 3600
-        setViperTargetPosition();
     }
     public void viperDeltaTimeDecrement() {
         viperPosition -= (int) (5000 * cycleTime); // 3600
-        setViperTargetPosition();
     }
     public void viperDeltaTime() {
         viperPosition -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
@@ -519,6 +488,7 @@ public void initializeIO() {
         if (viperPosition < 0){
             viperPosition = 0;
         }
+        
         setViperTargetPosition();
     }
     public void setViperTargetPosition(){
