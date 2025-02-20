@@ -68,16 +68,24 @@ public class TeleOpMain extends LinearOpMode {
 
     @Override
     public void runOpMode() {
+        
+        // hardware initialization e.g. motors and sensors
         initializeIO();
+        //optical odometry sensor initialization
         configureOtos();
-        // Retrieve the IMU from the hardware map
+        // Retrieve the IMU from the hardware map. Gyroscope initialization
         initializeIMU();
-        /* Wait for the game driver to press play */
+        
+        /* Having finished initialization proccess. the program
+        waits for the game driver to press play button in driver station console*/
         waitForStart();
-        /* Run until the driver presses stop */
+        
+        /* Runs continuously until the driver presses stop in driver station */
         while (opModeIsActive())
         {
+            // driving in filed centric strafer mode
             straferMovement();
+            // compensation factor in arm motor position
             setArmLiftComp();
 
             // reading current position of the optical odometry sensor
@@ -208,10 +216,6 @@ public class TeleOpMain extends LinearOpMode {
                 telemetry.addLine("VIPER MOTOR EXCEEDED CURRENT LIMIT!!");
             }
 
-            /* at the very end of the stream, we added a linear actuator kit to try to hang the robot on.
-             * it didn't end up working... But here's the code we run it with. It just sets the motor
-             * power to match the inverse of the left stick y.
-             */
 
             /* This is how we check our loop time. We create three variables:
             looptime is the current time when we hit this part of the code
@@ -229,6 +233,8 @@ public class TeleOpMain extends LinearOpMode {
             oldTime = loopTime;
             prevGamepad2A = gamepad2.a;
             prevGamepad2B = gamepad2.b;
+
+            //requesting telemetry data
             output();
         }
     }
@@ -242,6 +248,8 @@ public void initializeIO() {
     rightBackDrive  = hardwareMap.dcMotor.get("right_back");
     viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
     armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
+    
+    // define the optical odometry sensor object 
     otos = hardwareMap.get(SparkFunOTOS.class, "otos");
 
        /*
@@ -259,7 +267,7 @@ public void initializeIO() {
     leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
     armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+   
 
     /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
     ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
@@ -281,15 +289,14 @@ public void initializeIO() {
     viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-    armCollapsed();
-    viperCollapsed();
 
     /* Define and initialize servos.*/
     intake = hardwareMap.get(Servo.class, "intake_servo");
     wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
     /* Starting position with the wrist horizontal */
-    wristHorizontal();
+    //wristHorizontal();
+    wrist.setPosition(0);
 
     /* Send telemetry message to signify robot waiting */
     telemetry.addLine("Robot Ready.");
@@ -308,13 +315,14 @@ public void initializeIO() {
 
     public void output(){
         /* send telemetry to the driver of the arm's current position and target position */
-        telemetry.addLine("Version: Android 3");
+        telemetry.addLine("Version: Android 4 orfanak");
         telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
         telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
+        telemetry.addData("viperMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("viper busy", viperMotor.isBusy());
         telemetry.addData("viper Target Position", viperMotor.getTargetPosition());
         telemetry.addData("viper current position", viperMotor.getCurrentPosition());
-        telemetry.addData("liftMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("viperMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("cycle time sec",cycleTime);
         telemetry.addData("wrist pos", wrist.getPosition());
         telemetry.addData("intake pos", intake.getPosition());
@@ -409,7 +417,7 @@ public void initializeIO() {
     }
 
     public void runArm() {
-        ((DcMotorEx) armMotor).setVelocity(1500); // 2500
+        ((DcMotorEx) armMotor).setVelocity(1500); // 1500
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
     }
 
@@ -478,6 +486,7 @@ public void initializeIO() {
     public void viperDeltaTime() {
         viperPosition -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
     }
+    
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
            if it is, we set the variable to the max. */
@@ -488,8 +497,7 @@ public void initializeIO() {
         if (viperPosition < 0){
             viperPosition = 0;
         }
-        
-        setViperTargetPosition();
+    
     }
     public void setViperTargetPosition(){
         viperMotor.setTargetPosition(viperPosition);
@@ -498,7 +506,8 @@ public void initializeIO() {
         ((DcMotorEx) viperMotor).setVelocity(3200); // 3200 velocity of the viper slide 200
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
-//    ---------------- | strafer movement, otos | --------------------------------------------------
+    
+//    ---------------- | strafer movement| --------------------------------------------------
     public void straferMovement(){
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
@@ -507,6 +516,7 @@ public void initializeIO() {
         // This button choice was made so that it is hard to hit on accident,
         // it can be freely changed based on preference.
         // The equivalent button is start on Xbox-style controllers.
+        // press options button to reset IMU
         if (gamepad1.options) {
             imu.resetYaw();
         }
@@ -522,7 +532,9 @@ public void initializeIO() {
         // Denominator is the largest motor power (absolute value) or 1
         // This ensures all the powers maintain the same ratio,
         // but only if at least one is out of the range [-1, 1]
-        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+        // we multiply denominator variable by a variable named "straferSpeedFactor" with a value greater than 1
+        // in order to reduce the strafing speed. The normal strafing speed is to high and thus difficult to control the robot
+        double denominator = straferSpeedFactor* Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
         double frontLeftPower = (rotY + rotX + rx) / denominator;
         double backLeftPower = (rotY - rotX + rx) / denominator;
         double frontRightPower = (rotY - rotX - rx) / denominator;
