@@ -99,10 +99,14 @@ public class TeleOpMain extends LinearOpMode {
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
             if (gamepad2.dpad_down){
-                wristVertical();
+                // wrist vertical
+                wrist.setPosition(0.3);
+                wristVertical = true;
             }
             else if (gamepad2.dpad_up){
-                wristHorizontal();
+                // wrist horizontal
+                wrist.setPosition(0);
+                wristVertical = false;
             }
 
             if (gamepad2.right_bumper){
