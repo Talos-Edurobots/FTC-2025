@@ -64,22 +64,22 @@ public class TeleOpMain extends LinearOpMode {
     //odometry sensor
     SparkFunOTOS.Pose2D pos;
     // strafer speed compensation factor
-    double straferSpeedFactor = 1.7;
+    double straferSpeedFactor = 1.5;
 
     @Override
     public void runOpMode() {
-        
+
         // hardware initialization e.g. motors and sensors
         initializeIO();
         //optical odometry sensor initialization
         configureOtos();
         // Retrieve the IMU from the hardware map. Gyroscope initialization
         initializeIMU();
-        
+
         /* Having finished initialization proccess. the program
         waits for the game driver to press play button in driver station console*/
         waitForStart();
-        
+
         /* Runs continuously until the driver presses stop in driver station */
         while (opModeIsActive())
         {
@@ -90,7 +90,7 @@ public class TeleOpMain extends LinearOpMode {
 
             // reading current position of the optical odometry sensor
             pos = otos.getPosition();
-         
+
 
             /* TECH TIP: If Else statement:
             We're using an else if statement on "gamepad1.x" and "gamepad1.b" just in case
@@ -100,7 +100,7 @@ public class TeleOpMain extends LinearOpMode {
             one cycle. Which can cause strange behavior. */
             if (gamepad2.dpad_down){
                 // wrist vertical
-                wrist.setPosition(0.3);
+                wrist.setPosition(1);
                 wristVertical = true;
             }
             else if (gamepad2.dpad_up){
@@ -145,7 +145,7 @@ public class TeleOpMain extends LinearOpMode {
 
             else if (gamepad2.y){
                 /* This is the correct height to score the sample in the HIGH BASKET */
-                viperRetracted = false;
+                //viperRetracted = false;
                 armScoreSampleInHigh();
             }
 
@@ -215,7 +215,7 @@ public class TeleOpMain extends LinearOpMode {
                 telemetry.addLine("ARM MOTOR EXCEEDED CURRENT LIMIT!!");
             }
 
-               /* Check to see if our viper motor is over the current limit, and report via telemetry. */
+            /* Check to see if our viper motor is over the current limit, and report via telemetry. */
             if (((DcMotorEx) viperMotor).isOverCurrent()) {
                 telemetry.addLine("VIPER MOTOR EXCEEDED CURRENT LIMIT!!");
             }
@@ -235,77 +235,77 @@ public class TeleOpMain extends LinearOpMode {
             loopTime = getRuntime();
             cycleTime = loopTime - oldTime;
             oldTime = loopTime;
-            prevGamepad2A = gamepad2.a;
-            prevGamepad2B = gamepad2.b;
+            //prevGamepad2A = gamepad2.a;
+            //prevGamepad2B = gamepad2.b;
 
             //requesting telemetry data
             output();
         }
     }
 
-//    ---------------- | initialization, output | ----------------------------------------------------------
-public void initializeIO() {
-    /* Define and Initialize Motors */
-    leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
-    leftBackDrive   = hardwareMap.dcMotor.get("left_back");
-    rightFrontDrive = hardwareMap.dcMotor.get("right_front");
-    rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-    viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
-    armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-    
-    // define the optical odometry sensor object 
-    otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+    //    ---------------- | initialization, output | ----------------------------------------------------------
+    public void initializeIO() {
+        /* Define and Initialize Motors */
+        leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
+        leftBackDrive   = hardwareMap.dcMotor.get("left_back");
+        rightFrontDrive = hardwareMap.dcMotor.get("right_front");
+        rightBackDrive  = hardwareMap.dcMotor.get("right_back");
+        viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
+        armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
+
+        // define the optical odometry sensor object
+        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
 
        /*
        we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
        drive motors to go forward.
         */
-    leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-    leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
 
         /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
         much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
         stops much quicker. */
-    leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-    armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-   
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
-    /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-    ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
-    /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
-    ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
+        ((DcMotorEx) armMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+        /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
+        ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
 
         /* Before starting the arm and viper motors. We'll make sure the TargetPosition is set to 0.
         Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
         If you do not have the encoder plugged into this motor, it will not run in this code. */
-  
-    armMotor.setTargetPosition(0);
-    armMotor.setDirection(DcMotor.Direction.REVERSE);
-    armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-    viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-    viperMotor.setTargetPosition(0);
-    viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-    viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        armMotor.setTargetPosition(0);
+        armMotor.setDirection(DcMotor.Direction.REVERSE);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        viperMotor.setTargetPosition(0);
+        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
-    /* Define and initialize servos.*/
-    intake = hardwareMap.get(Servo.class, "intake_servo");
-    wrist  = hardwareMap.get(Servo.class, "wrist_servo");
+        /* Define and initialize servos.*/
+        intake = hardwareMap.get(Servo.class, "intake_servo");
+        wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
-    /* Starting position with the wrist horizontal */
-    //wristHorizontal();
-    wrist.setPosition(0);
+        /* Starting position with the wrist horizontal */
+        //wristHorizontal();
+        wrist.setPosition(0);
 
-    /* Send telemetry message to signify robot waiting */
-    telemetry.addLine("Robot Ready.");
-    telemetry.update();
-}
+        /* Send telemetry message to signify robot waiting */
+        telemetry.addLine("Robot Ready.");
+        telemetry.update();
+    }
 
     public void initializeIMU() {
         imu = hardwareMap.get(IMU.class, "imu");
@@ -338,7 +338,7 @@ public void initializeIO() {
         telemetry.update();
     }
 
-// ---------------- | arm | ------------------------------------------------------------------------
+    // ---------------- | arm | ------------------------------------------------------------------------
     public int armDegreesToTicks(double degrees) {
         return (int) (
                 28 // number of encoder ticks per rotation of the bare motor
@@ -425,7 +425,7 @@ public void initializeIO() {
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
     }
 
-//    ---------------- | intake system | -----------------------------------------------------------
+    //    ---------------- | intake system | -----------------------------------------------------------
     public void intakeCollectHorizontal() {
         intake.setPosition(1); // intake closed
         intakeOpened = false;
@@ -450,7 +450,7 @@ public void initializeIO() {
         wristVertical = false;
     }
 
-//    ---------------- | viper slide | -------------------------------------------------------------
+    //    ---------------- | viper slide | -------------------------------------------------------------
     public int viperMotorMmToTicks(double mm) {
         /*
          * 312 rpm motor: 537.7 ticks per revolution
@@ -490,7 +490,7 @@ public void initializeIO() {
     public void viperDeltaTime() {
         viperPosition -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
     }
-    
+
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
            if it is, we set the variable to the max. */
@@ -501,7 +501,7 @@ public void initializeIO() {
         if (viperPosition < 0){
             viperPosition = 0;
         }
-    
+
     }
     public void setViperTargetPosition(){
         viperMotor.setTargetPosition(viperPosition);
@@ -510,8 +510,8 @@ public void initializeIO() {
         ((DcMotorEx) viperMotor).setVelocity(3200); // 3200 velocity of the viper slide 200
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
-    
-//    ---------------- | strafer movement| --------------------------------------------------
+
+    //    ---------------- | strafer movement| --------------------------------------------------
     public void straferMovement(){
         double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
@@ -658,7 +658,6 @@ public void initializeIO() {
  *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *   SOFTWARE.
  */
-
 
 
 
