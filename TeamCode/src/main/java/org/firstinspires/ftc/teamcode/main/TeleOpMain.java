@@ -603,7 +603,7 @@ public class TeleOpMain extends LinearOpMode {
         // multiple speeds to get an average, then set the linear scalar to the
         // inverse of the error. For example, if you move the robot 100 inches and
         // the sensor reports 103 inches, set the linear scalar to 100/103 = 0.971
-        otos.setLinearScalar(1.138); //known distance 209cm, measured distance 160cm, error 182/160 = 1.138
+        otos.setLinearScalar(1.138); //known distance 182cm, measured distance 160cm, error 182/160 = 1.138
         otos.setAngularScalar(0.9978); // 10 rotations 3600 degrees, measured 3608, error 3600/3608 =0.9978
 
         // The IMU on the OTOS includes a gyroscope and accelerometer, which could
