@@ -167,12 +167,11 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
                 intakeOpen();
             }
-
             else if (gamepad2.dpad_right){
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armScoreSampleInLow();
                 viperCollapsed();
-                wristVertical();
+                wristHorizontal();
             }
 
             //            if (gamepad2.right_trigger >= .1) {
@@ -481,8 +480,8 @@ public class TeleOpMain extends LinearOpMode {
                                 * mm // specified length
                 );
     }
-    public void setViperPosition(int ticks) {
-        viperPosition = ticks;
+    public void setViperPosition(int mm) {
+        viperPosition = mm;
     }
     public void viperScoreInLow() {
         viperPosition = 0;
@@ -500,7 +499,7 @@ public class TeleOpMain extends LinearOpMode {
 //        viperPosition -= (int) (5000 * cycleTime); // 3600
 //    }
     public void viperDeltaTime() {
-         viperPositionDelta -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
+         viperPositionDelta -= (int) ((int) (2000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 2000
     }
 
     public void viperNormalization() {
@@ -520,7 +519,7 @@ public class TeleOpMain extends LinearOpMode {
         viperMotor.setTargetPosition(viperPosition);
     }
     public void runViper() {
-        ((DcMotorEx) viperMotor).setVelocity(3200); // 3200 velocity of the viper slide 200
+        ((DcMotorEx) viperMotor).setVelocity(3000); //velocity of the viper slide
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
     }
 
