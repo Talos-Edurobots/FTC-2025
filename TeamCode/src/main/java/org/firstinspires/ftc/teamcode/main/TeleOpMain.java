@@ -33,7 +33,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  */
 
 
-@TeleOp(name="TeleOpMain", group="Robot")
+@TeleOp(name="TeleOpMainOrf", group="Robot")
 //@Disabled
 public class TeleOpMain extends LinearOpMode {
     /* Declare OpMode members. */
@@ -52,6 +52,7 @@ public class TeleOpMain extends LinearOpMode {
     int armPositionFudgeFactor;
     final int MAX_VIPER_POSITION = viperMotorMmToTicks(480);
     int viperPosition;
+    int viperPositionDelta;
     int armLiftComp = 0;
     IMU imu;
     int capturedViperPosition;
@@ -76,7 +77,7 @@ public class TeleOpMain extends LinearOpMode {
         // Retrieve the IMU from the hardware map. Gyroscope initialization
         initializeIMU();
 
-        /* Having finished initialization proccess. the program
+        /* Having finished initialization process. the program
         waits for the game driver to press play button in driver station console*/
         waitForStart();
 
@@ -98,9 +99,19 @@ public class TeleOpMain extends LinearOpMode {
             at the same time. "a" will win over and the intake will turn on. If we just had
             three if statements, then it will set the intake servo's power to multiple speeds in
             one cycle. Which can cause strange behavior. */
+
+            /* Gamepad 1 controls the robot movement (strafing mode) and the positioning of th arm
+            for hanging at the end of the game.
+            Gamepad 2 controls all the arm positioning for scoring samples and specimens and the viper
+            movement back and forth.
+             */
+
+            //  ---------------  Gamepad 2 Control --------------
+            // Controlling wrist servo
+            // wrist servo moves wrist to either horizontal or vertical position
             if (gamepad2.dpad_down){
                 // wrist vertical
-                wrist.setPosition(1);
+                wrist.setPosition(0.6);
                 wristVertical = true;
             }
             else if (gamepad2.dpad_up){
@@ -109,6 +120,8 @@ public class TeleOpMain extends LinearOpMode {
                 wristVertical = false;
             }
 
+            // // Controlling intake claw servo
+            // our intake claw is always closed unless right_bumper or left_bumper buttons are pressed
             if (gamepad2.right_bumper){
                 intakeOpen();
             }
@@ -117,38 +130,35 @@ public class TeleOpMain extends LinearOpMode {
             }
 
             if (gamepad2.left_bumper) {
+                intakeOpen();
+            }
+            else {
+                intakeCollect();
+            }
+
+            //Controlling arm positioning using buttons
+
+            // moves the arm to an angle position for scoring specimens
+            else if (gamepad2.x) { //ps4 square
+                armScoreSpecimen();
                 viperCollapsed();
             }
-            else if (gamepad2.x) {
-                viperScoreInHigh();
-            }
 
-
-            configureFudge();
-
-            /* Here we implement a set of if else statements to set our arm to different scoring positions.
-            We check to see if a specific button is pressed, and then move the arm (and sometimes
-            intake and wrist) to match. For example, if we click the right bumper we want the robot
-            to start collecting. So it moves the armPosition to the ARM_COLLECT position,
-            it folds out the wrist to make sure it is in the correct orientation to intake, and it
-            turns the intake on to the COLLECT mode.*/
-
-            if(gamepad2.a){ // ps4: o
-                /* This is the intaking/collecting arm position for collecting samples */
+            if(gamepad2.a){ // ps4: X
+                /* This is the intake/ collecting arm position for collecting samples */
                 armCollect();
                 viperCollapsed();
             }
-
-            else if (gamepad2.b) { // ps4: x
+            else if (gamepad2.b) { // ps4: O
                 armClearBarrier();
+                viperCollapsed();
             }
-
-            else if (gamepad2.y){
+            else if (gamepad2.y){ //ps4 triangle
                 /* This is the correct height to score the sample in the HIGH BASKET */
                 //viperRetracted = false;
                 armScoreSampleInHigh();
+                viperCollapsed();
             }
-
             else if (gamepad2.dpad_left) {
                     /* This turns off the intake, folds in the wrist, and moves the arm
                     back to folded inside the robot. This is also the starting configuration */
@@ -159,9 +169,17 @@ public class TeleOpMain extends LinearOpMode {
 
             else if (gamepad2.dpad_right){
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
-                armScoreSpecimen();
+                armScoreSampleInLow();
+                viperCollapsed();
                 wristVertical();
             }
+
+            //            if (gamepad2.right_trigger >= .1) {
+//                viperDeltaTimeIncrement();
+//            }
+//            else if (gamepad2.left_trigger >= .1) {
+//                viperDeltaTimeDecrement();
+//            }
 
             else if (gamepad1.dpad_up){
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
@@ -174,7 +192,8 @@ public class TeleOpMain extends LinearOpMode {
                 armWinchRobot();
                 wristVertical();
             }
-
+            
+            configureFudge();
             setArmTargetPosition();
             runArm();
 
@@ -197,17 +216,10 @@ public class TeleOpMain extends LinearOpMode {
             we are only incrementing it a small amount each cycle.
              */
 
-//            if (gamepad2.right_trigger >= .1) {
-//                viperDeltaTimeIncrement();
-//            }
-//            else if (gamepad2.left_trigger >= .1) {
-//                viperDeltaTimeDecrement();
-//            }
-            viperDeltaTime();
 
+            viperDeltaTime();
             viperNormalization();
             setViperTargetPosition();
-//            TimeUnit.SECONDS.sleep(1);
             runViper();
 
             /* Check to see if our arm is over the current limit, and report via telemetry. */
@@ -386,16 +398,20 @@ public class TeleOpMain extends LinearOpMode {
         armPosition = armDegreesToTicks(20);
     }
     public void armCollect(){
-        armPosition = armDegreesToTicks(5);
+        armPosition = armDegreesToTicks(10);
     }
     public void armScoreSpecimen() {
-        armPosition = armDegreesToTicks(90);
+        armPosition = armDegreesToTicks(95);
     }
     public void armScoreSampleInHigh() {
         armPosition = armDegreesToTicks(110);
     } // 90
     public void armAttachHangingHook() {
         armPosition = armDegreesToTicks(110);
+    }
+
+    public void armScoreSampleInLow() {
+        armPosition = armDegreesToTicks(95);
     }
     public void armWinchRobot() {
         armPosition = armDegreesToTicks(10);
@@ -442,7 +458,7 @@ public class TeleOpMain extends LinearOpMode {
         intake.setPosition(1);
     }
     public void wristVertical() {
-        wrist.setPosition(1); // 0.43
+        wrist.setPosition(0.20); // 0.43
         wristVertical = true;
     }
     public void wristHorizontal() {
@@ -481,19 +497,20 @@ public class TeleOpMain extends LinearOpMode {
     public void viperCollapsed() {
         viperPosition = 0;
     }
-    public void viperDeltaTimeIncrement() {
-        viperPosition += (int) (5000 * cycleTime); // 3600
-    }
-    public void viperDeltaTimeDecrement() {
-        viperPosition -= (int) (5000 * cycleTime); // 3600
-    }
+//    public void viperDeltaTimeIncrement() {
+//        viperPosition += (int) (5000 * cycleTime); // 3600
+//    }
+//    public void viperDeltaTimeDecrement() {
+//        viperPosition -= (int) (5000 * cycleTime); // 3600
+//    }
     public void viperDeltaTime() {
-        viperPosition -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
+         viperPositionDelta -= (int) ((int) (5000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 3600
     }
 
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
            if it is, we set the variable to the max. */
+        viperPosition = viperPosition + viperPositionDelta;
         if (viperPosition > MAX_VIPER_POSITION){
             viperPosition = MAX_VIPER_POSITION;
         }
@@ -637,27 +654,11 @@ public class TeleOpMain extends LinearOpMode {
     }
 }
 
-/*   MIT License
- *   Copyright (c) [2024] [Base 10 Assets, LLC]
- *
- *   Permission is hereby granted, free of charge, to any person obtaining a copy
- *   of this software and associated documentation files (the "Software"), to deal
- *   in the Software without restriction, including without limitation the rights
- *   to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- *   copies of the Software, and to permit persons to whom the Software is
- *   furnished to do so, subject to the following conditions:
 
- *   The above copyright notice and this permission notice shall be included in all
- *   copies or substantial portions of the Software.
 
- *   THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- *   IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- *   FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- *   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- *   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- *   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
- *   SOFTWARE.
- */
+
+
+
 
 
 
