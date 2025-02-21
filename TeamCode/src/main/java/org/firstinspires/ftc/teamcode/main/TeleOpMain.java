@@ -160,11 +160,12 @@ public class TeleOpMain extends LinearOpMode {
                 viperCollapsed();
             }
             else if (gamepad2.dpad_left) {
-                    /* This turns off the intake, folds in the wrist, and moves the arm
-                    back to folded inside the robot. This is also the starting configuration */
+                    /* This is the starting configuration of the robot. This turns off and opens fully the intake,and moves the arm
+                    back to folded inside the robot. */
                 armCollapsed();
                 viperCollapsed();
-                wristVertical();
+                wristHorizontal();
+                intakeOpen();
             }
 
             else if (gamepad2.dpad_right){
@@ -310,9 +311,11 @@ public class TeleOpMain extends LinearOpMode {
         intake = hardwareMap.get(Servo.class, "intake_servo");
         wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
-        /* Starting position with the wrist horizontal */
+        /* Starting position with the wrist horizontal and intake open*/
         //wristHorizontal();
         wrist.setPosition(0);
+        intakeOpen();
+        
 
         /* Send telemetry message to signify robot waiting */
         telemetry.addLine("Robot Ready.");
@@ -332,11 +335,11 @@ public class TeleOpMain extends LinearOpMode {
     public void output(){
         /* send telemetry to the driver of the arm's current position and target position */
         telemetry.addLine("Version: Android 4 orfanak");
-        telemetry.addData("arm Target Position: ", armMotor.getTargetPosition());
+        telemetry.addData("arm target Position: ", armMotor.getTargetPosition());
         telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
-        telemetry.addData("viperMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("armMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("viper busy", viperMotor.isBusy());
-        telemetry.addData("viper Target Position", viperMotor.getTargetPosition());
+        telemetry.addData("viper target Position", viperMotor.getTargetPosition());
         telemetry.addData("viper current position", viperMotor.getCurrentPosition());
         telemetry.addData("viperMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("cycle time sec",cycleTime);
@@ -350,7 +353,7 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.update();
     }
 
-    // ---------------- | arm | ------------------------------------------------------------------------
+    // ---------------- | arm position handling| ------------------------------------------------------------------------
     public int armDegreesToTicks(double degrees) {
         return (int) (
                 28 // number of encoder ticks per rotation of the bare motor
@@ -384,8 +387,8 @@ public class TeleOpMain extends LinearOpMode {
             armLiftComp = 0;
         }
     }
-    public void setArmPosition(int ticks) {
-        armPosition = ticks;
+    public void setArmPosition(int degrees) {
+        armPosition = degrees;
     }
     public void armCollapsed() {
         armPosition = 0;
@@ -437,19 +440,12 @@ public class TeleOpMain extends LinearOpMode {
     }
 
     public void runArm() {
-        ((DcMotorEx) armMotor).setVelocity(1500); // 1500
+        ((DcMotorEx) armMotor).setVelocity(1000); // 1000
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
     }
 
     //    ---------------- | intake system | -----------------------------------------------------------
-    public void intakeCollectHorizontal() {
-        intake.setPosition(1); // intake closed
-        intakeOpened = false;
-    }
-    public void intakeCollectVertical() {
-        intake.setPosition(.65); // intake closed
-        intakeOpened = false;
-    }
+
     public void intakeOpen() {
         intake.setPosition(0); // intake open
         intakeOpened = true;
@@ -458,7 +454,7 @@ public class TeleOpMain extends LinearOpMode {
         intake.setPosition(1);
     }
     public void wristVertical() {
-        wrist.setPosition(0.20); // 0.43
+        wrist.setPosition(0.60); // 0.6
         wristVertical = true;
     }
     public void wristHorizontal() {
