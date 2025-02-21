@@ -122,10 +122,7 @@ public class TeleOpMain extends LinearOpMode {
 
             // // Controlling intake claw servo
             // our intake claw is always closed unless right_bumper or left_bumper buttons are pressed
-            if (gamepad2.left_stick_y < -0.2){
-                intakeOpen();
-            }
-            else if (gamepad2.right_stick_y < -0.2 ) {
+            if (gamepad2.left_stick_y < -0.05 || gamepad2.right_stick_y < -0.05 || gamepad2.right_stick_button || gamepad2.left_stick_button){
                 intakeOpen();
             }
             else {
@@ -138,35 +135,35 @@ public class TeleOpMain extends LinearOpMode {
             if(gamepad2.a){ // ps4: X
                 /* This is the intake/ collecting arm position for collecting samples */
                 armCollect();
-                viperCollapsed();
+               // viperCollapsed();
             }
             else if (gamepad2.b) { // ps4: O
                 armClearBarrier();
-                viperCollapsed();
+                //viperCollapsed();
             }
             else if (gamepad2.y){ //ps4 triangle
                 /* This is the correct height to score the sample in the HIGH BASKET */
                 //viperRetracted = false;
                 armScoreSampleInHigh();
-                viperCollapsed();
+                //viperCollapsed();
             }
             // moves the arm to an angle position for scoring specimens
             else if (gamepad2.x) { //ps4 square
                 armScoreSpecimen();
-                viperCollapsed();
+                //viperCollapsed();
             }
             else if (gamepad2.dpad_left) {
                     /* This is the starting configuration of the robot. This turns off and opens fully the intake,and moves the arm
                     back to folded inside the robot. */
                 armCollapsed();
-                viperCollapsed();
+               // viperCollapsed();
                 wristHorizontal();
                 intakeOpen();
             }
             else if (gamepad2.dpad_right){
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armScoreSampleInLow();
-                viperCollapsed();
+               // viperCollapsed();
                 wristHorizontal();
             }
             if (gamepad2.right_bumper){
@@ -282,6 +279,7 @@ public class TeleOpMain extends LinearOpMode {
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
@@ -399,7 +397,7 @@ public class TeleOpMain extends LinearOpMode {
         armPosition = armDegreesToTicks(20);
     }
     public void armCollect(){
-        armPosition = armDegreesToTicks(10);
+        armPosition = armDegreesToTicks(5);
     }
     public void armScoreSpecimen() {
         armPosition = armDegreesToTicks(95);
@@ -438,7 +436,7 @@ public class TeleOpMain extends LinearOpMode {
     }
 
     public void runArm() {
-        ((DcMotorEx) armMotor).setVelocity(500); // 500
+        ((DcMotorEx) armMotor).setVelocity(3000); // 3000
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
     }
 
@@ -605,8 +603,8 @@ public class TeleOpMain extends LinearOpMode {
         // multiple speeds to get an average, then set the linear scalar to the
         // inverse of the error. For example, if you move the robot 100 inches and
         // the sensor reports 103 inches, set the linear scalar to 100/103 = 0.971
-        otos.setLinearScalar(1.0);
-        otos.setAngularScalar(1.0);
+        otos.setLinearScalar(1.1); //known distance 209cm, measured distance 160cm, error 209/160 = 1.3
+        otos.setAngularScalar(0.9978); // 10 rotations 3600 degrees, measured 3608, error 3600/3608 =0.9978
 
         // The IMU on the OTOS includes a gyroscope and accelerometer, which could
         // have an offset. Note that as of firmware version 1.0, the calibration
@@ -648,11 +646,5 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.update();
     }
 }
-
-
-
-
-
-
 
 
