@@ -50,11 +50,14 @@ public class TeleOpMain extends LinearOpMode {
     /* Variables that are used to set the arm and viper to a specific position */
     int armPosition;
     int armPositionFudgeFactor;
-    final int MAX_VIPER_POSITION = viperMotorMmToTicks(480);
-    int viperPosition;
+
+    // these constants store the minimum and maximum values for the viper motor after initialization
+    final int MAX_VIPER_POSITION = viperMotorMmToTicks(480); // max viper extension (48 cm)
+    final int MIN_VIPER_POSITION = viperMotorMmToTicks(0); // min viper extension (0 cm)
+    int viperPosition; // store the current position of the viper motor in ticks
     int viperPositionDelta;
-    int armLiftComp = 0;
-    IMU imu;
+    int armLiftComp = 0; // store the compensation factor for the arm lift
+    IMU imu; // the IMU sensor object
     int capturedViperPosition;
     boolean wristVertical;
     boolean intakeOpened;
@@ -93,13 +96,6 @@ public class TeleOpMain extends LinearOpMode {
             pos = otos.getPosition();
 
 
-            /* TECH TIP: If Else statement:
-            We're using an else if statement on "gamepad1.x" and "gamepad1.b" just in case
-            multiple buttons are pressed at the same time. If the driver presses both "a" and "x"
-            at the same time. "a" will win over and the intake will turn on. If we just had
-            three if statements, then it will set the intake servo's power to multiple speeds in
-            one cycle. Which can cause strange behavior. */
-
             /* Gamepad 1 controls the robot movement (strafing mode) and the positioning of th arm
             for hanging at the end of the game.
             Gamepad 2 controls all the arm positioning for scoring samples and specimens and the viper
@@ -121,7 +117,10 @@ public class TeleOpMain extends LinearOpMode {
             }
 
             // // Controlling intake claw servo
-            // our intake claw is always closed unless right_bumper or left_bumper buttons are pressed
+            /*
+            * our intake claw is always closed unless left_stick_y or right_stick_y of gamepad2 are
+            * facing down or either right_stick_button and left_stick_button are pressed on gamepad2.
+            */
             if (gamepad2.left_stick_y < -0.05 || gamepad2.right_stick_y < -0.05 || gamepad2.right_stick_button || gamepad2.left_stick_button){
                 intakeOpen();
             }
@@ -130,42 +129,57 @@ public class TeleOpMain extends LinearOpMode {
             }
 
             //Controlling arm positioning using buttons
-
-
             if(gamepad2.a){ // ps4: X
                 /* This is the intake/ collecting arm position for collecting samples */
                 armCollect();
                // viperCollapsed();
             }
             else if (gamepad2.b) { // ps4: O
+                /*
+                * This is the correct height to collect samples from the observation zone
+                */
                 armClearBarrier();
-                //viperCollapsed();
             }
             else if (gamepad2.y){ //ps4 triangle
                 /* This is the correct height to score the sample in the HIGH BASKET */
-                //viperRetracted = false;
                 armScoreSampleInHigh();
-                //viperCollapsed();
             }
-            // moves the arm to an angle position for scoring specimens
             else if (gamepad2.x) { //ps4 square
+                /* moves the arm to an angle position for scoring specimens */
                 armScoreSpecimen();
-                //viperCollapsed();
             }
             else if (gamepad2.dpad_left) {
-                    /* This is the starting configuration of the robot. This turns off and opens fully the intake,and moves the arm
-                    back to folded inside the robot. */
+                /* This is the starting configuration of the robot. This turns off and opens fully the intake,and moves the arm
+                back to folded inside the robot. */
                 armCollapsed();
-               // viperCollapsed();
                 wristHorizontal();
                 intakeOpen();
             }
             else if (gamepad2.dpad_right){
                 /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
                 armScoreSampleInLow();
-               // viperCollapsed();
                 wristHorizontal();
             }
+
+
+            /* Here we set the lift position based on the driver input.
+            This is a.... weird, way to set the position of a "closed loop" device. The lift is run
+            with encoders. So it knows exactly where it is, and there's a limit to how far in and
+            out it should run. Normally with mechanisms like this we just tell it to run to an exact
+            position. This works a lot like our arm. Where we click a button and it goes to a position, then stops.
+            But the drivers wanted more "open loop" controls. So we want the lift to keep extending for
+            as long as we hold the bumpers, and when we let go of the bumper, stop where it is at.
+            This allows the driver to manually set the position, and not have to have a bunch of different
+            options for how far out it goes. But it also lets us enforce the end stops for the slide
+            in software. So that the motor can't run past it's endstops and stall.
+            We have our liftPosition variable, which we increment or decrement for every cycle (every
+            time our main robot code runs) that we're holding the button. Now since every cycle can take
+            a different amount of time to complete, and we want the lift to move at a constant speed,
+            we measure how long each cycle takes with the cycletime variable. Then multiply the
+            speed we want the lift to run at (in mm/sec) by the cycletime variable. There's no way
+            that our lift can move 2800mm in one cycle, but since each cycle is only a fraction of a second,
+            we are only incrementing it a small amount each cycle.
+             */
             if (gamepad2.right_bumper){
                 viperPosition += (int) (2800 * cycleTime);
             }
@@ -173,7 +187,11 @@ public class TeleOpMain extends LinearOpMode {
                 viperPosition -= (int) (2800 * cycleTime);
             }
 
-            //viperDeltaTime();
+            /*
+            * we normalize the viper motor position
+            * we set the position as target position
+            * we finally run the viper motor
+            */
             viperNormalization();
             setViperTargetPosition();
             runViper();
@@ -200,24 +218,6 @@ public class TeleOpMain extends LinearOpMode {
             setArmTargetPosition();
             runArm();
 
-            /* Here we set the lift position based on the driver input.
-            This is a.... weird, way to set the position of a "closed loop" device. The lift is run
-            with encoders. So it knows exactly where it is, and there's a limit to how far in and
-            out it should run. Normally with mechanisms like this we just tell it to run to an exact
-            position. This works a lot like our arm. Where we click a button and it goes to a position, then stops.
-            But the drivers wanted more "open loop" controls. So we want the lift to keep extending for
-            as long as we hold the bumpers, and when we let go of the bumper, stop where it is at.
-            This allows the driver to manually set the position, and not have to have a bunch of different
-            options for how far out it goes. But it also lets us enforce the end stops for the slide
-            in software. So that the motor can't run past it's endstops and stall.
-            We have our liftPosition variable, which we increment or decrement for every cycle (every
-            time our main robot code runs) that we're holding the button. Now since every cycle can take
-            a different amount of time to complete, and we want the lift to move at a constant speed,
-            we measure how long each cycle takes with the cycletime variable. Then multiply the
-            speed we want the lift to run at (in mm/sec) by the cycletime variable. There's no way
-            that our lift can move 2800mm in one cycle, but since each cycle is only a fraction of a second,
-            we are only incrementing it a small amount each cycle.
-             */
 
 
             /* Check to see if our arm is over the current limit, and report via telemetry. */
@@ -350,7 +350,10 @@ public class TeleOpMain extends LinearOpMode {
     }
 
     // ---------------- | arm position handling| ------------------------------------------------------------------------
+
+
     public int armDegreesToTicks(double degrees) {
+        /* this function converts degrees to ticks for the arm motor */
         return (int) (
                 28 // number of encoder ticks per rotation of the bare motor
                         * 250047.0 / 4913.0 // This is the exact gear ratio of the 50.9:1 Yellow Jacket gearbox
@@ -377,7 +380,7 @@ public class TeleOpMain extends LinearOpMode {
              */
 
         if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = (int) (0 * viperPosition); // 0.25568
+            armLiftComp = 0; // 0.25568
         }
         else {
             armLiftComp = 0;
@@ -396,6 +399,8 @@ public class TeleOpMain extends LinearOpMode {
             they were doing before we clicked left bumper. */
         armPosition = armDegreesToTicks(20);
     }
+
+    // these are functions for arm movement
     public void armCollect(){
         armPosition = armDegreesToTicks(5);
     }
@@ -475,7 +480,7 @@ public class TeleOpMain extends LinearOpMode {
                                         / 696
                         ) // viper slide unfolded length
                                 * mm // specified length
-                );
+                ) + 50;
     }
     public void setViperPosition(int mm) {
         viperPosition = viperMotorMmToTicks(mm);
@@ -487,7 +492,7 @@ public class TeleOpMain extends LinearOpMode {
         viperPosition = viperMotorMmToTicks(480);
     }
     public void viperCollapsed() {
-        viperPosition = 0;
+        viperPosition = viperMotorMmToTicks(0);
     }
     //    public void viperDeltaTimeIncrement() {
 //        viperPosition += (int) (5000 * cycleTime); // 3600
@@ -507,9 +512,9 @@ public class TeleOpMain extends LinearOpMode {
         if (viperPosition > MAX_VIPER_POSITION){
             viperPosition = MAX_VIPER_POSITION;
         }
-        //same as above, we see if the lift is trying to go below 0, and if it is, we set it to 0.
-        if (viperPosition < 0){
-            viperPosition = 0;
+        // same as above, we see if the lift is trying to go below the minimum limit, and if it is, we set it to 0.
+        if (viperPosition < MIN_VIPER_POSITION) {
+            viperPosition = MIN_VIPER_POSITION;
         }
 
     }
