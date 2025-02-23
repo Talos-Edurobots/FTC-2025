@@ -402,16 +402,16 @@ public class TeleOpMain extends LinearOpMode {
 
     // these are functions for arm movement
     public void armCollect(){
-        armPosition = armDegreesToTicks(5);
+        armPosition = armDegreesToTicks(10);
     }
     public void armScoreSpecimen() {
-        armPosition = armDegreesToTicks(95);
+        armPosition = armDegreesToTicks(90);
     }
     public void armScoreSampleInHigh() {
         armPosition = armDegreesToTicks(110);
     } // 90
     public void armAttachHangingHook() {
-        armPosition = armDegreesToTicks(110);
+        armPosition = armDegreesToTicks(120);
     }
 
     public void armScoreSampleInLow() {
@@ -441,7 +441,7 @@ public class TeleOpMain extends LinearOpMode {
     }
 
     public void runArm() {
-        ((DcMotorEx) armMotor).setVelocity(3000); // 3000
+        ((DcMotorEx) armMotor).setVelocity(2500); // 2500
         armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
     }
 
@@ -480,7 +480,9 @@ public class TeleOpMain extends LinearOpMode {
                                         / 696
                         ) // viper slide unfolded length
                                 * mm // specified length
-                ) + 50;
+                ) + 100; //we add 100mm at the end because our viper is not able to completely fold inside (i.e. go to 0mm) while the viper motor continues to try
+        // to achieve its target 0mm positionn. This has the result the motor to heat up and get stalled and get destroyed. However the viper motor always achieves the target for 
+        //100mm position and thus doesn't get streesed.
     }
     public void setViperPosition(int mm) {
         viperPosition = viperMotorMmToTicks(mm);
