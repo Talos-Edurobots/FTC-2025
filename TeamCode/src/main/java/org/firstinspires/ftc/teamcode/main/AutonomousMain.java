@@ -46,17 +46,6 @@ public class AutonomousMain extends LinearOpMode {
             return;
         }
         while (opModeIsActive()) {
-//            pos = otos.getPosition();
-//            leftFront.setPower(1);
-//            leftBack.setPower(1);
-//            rightFront.setPower(1);
-//            rightBack.setPower(1);
-//            Thread.sleep(500);
-//            leftFront.setPower(0);
-//            leftBack.setPower(0);
-//            rightFront.setPower(0);
-//            rightBack.setPower(0);
-//            Thread.sleep(500);
             gotoPosition(100, 100);
         }
     }
