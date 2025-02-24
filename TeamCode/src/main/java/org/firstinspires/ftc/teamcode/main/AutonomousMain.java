@@ -16,6 +16,8 @@ public class AutonomousMain extends LinearOpMode {
     public IMU imu;
     public SparkFunOTOS otos;
     SparkFunOTOS.Pose2D pos;
+    double straferSpeedFactor = 2.5;
+
     @Override
     public void runOpMode() throws InterruptedException {
         leftFront = hardwareMap.dcMotor.get("left_front");
@@ -80,7 +82,7 @@ public class AutonomousMain extends LinearOpMode {
         // Denominator is the largest motor power (absolute value) or 1
         // This ensures all the powers maintain the same ratio,
         // but only if at least one is out of the range [-1, 1]
-        double denominator = Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+        double denominator = straferSpeedFactor * Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
         double frontLeftPower = (rotY + rotX) / denominator;
         double backLeftPower = (rotY - rotX) / denominator;
         double frontRightPower = (rotY - rotX) / denominator;

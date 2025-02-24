@@ -279,7 +279,7 @@ public class TeleOpMain extends LinearOpMode {
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        //viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
@@ -330,7 +330,7 @@ public class TeleOpMain extends LinearOpMode {
 
     public void output(){
         /* send telemetry to the driver of the arm's current position and target position */
-        telemetry.addLine("Version: Android 4 orfanak");
+        telemetry.addLine("Version: Android 5 orfanak");
         telemetry.addData("arm target Position: ", armMotor.getTargetPosition());
         telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
         telemetry.addData("armMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
@@ -480,9 +480,13 @@ public class TeleOpMain extends LinearOpMode {
                                         / 696
                         ) // viper slide unfolded length
                                 * mm // specified length
+<<<<<<< Updated upstream
                 ) + 100; //we add 100mm at the end because our viper is not able to completely fold inside (i.e. go to 0mm) while the viper motor continues to try
         // to achieve its target 0mm positionn. This has the result the motor to heat up and get stalled and get destroyed. However the viper motor always achieves the target for 
         //100mm position and thus doesn't get streesed.
+=======
+                ) + 100;
+>>>>>>> Stashed changes
     }
     public void setViperPosition(int mm) {
         viperPosition = viperMotorMmToTicks(mm);
@@ -491,7 +495,7 @@ public class TeleOpMain extends LinearOpMode {
         viperPosition = viperMotorMmToTicks(0);
     }
     public void viperScoreInHigh() {
-        viperPosition = viperMotorMmToTicks(480);
+        viperPosition = viperMotorMmToTicks(380);
     }
     public void viperCollapsed() {
         viperPosition = viperMotorMmToTicks(0);
