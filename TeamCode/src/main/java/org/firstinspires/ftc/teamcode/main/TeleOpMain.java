@@ -37,15 +37,15 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 //@Disabled
 public class TeleOpMain extends LinearOpMode {
     /* Declare OpMode members. */
-    public DcMotor      leftFrontDrive  = null; //the left front drivetrain motor
-    public DcMotor      rightFrontDrive = null; //the right front drivetrain motor
-    public DcMotor      leftBackDrive   = null; //the left back drivetrain motor
-    public DcMotor      rightBackDrive  = null; //the right bacck drivetrain motor
-    public DcMotor      armMotor        = null; //the arm motor
-    public DcMotor      viperMotor      = null; // the viper slide motor
-    public Servo        intake          = null; //the active intake servo
-    public Servo        wrist           = null; //the wrist servo
-    public SparkFunOTOS otos            = null; // the optical odometry sensor
+    public DcMotor      leftFrontDrive; //the left front drivetrain motor
+    public DcMotor      rightFrontDrive; //the right front drivetrain motor
+    public DcMotor      leftBackDrive; //the left back drivetrain motor
+    public DcMotor      rightBackDrive; //the right bacck drivetrain motor
+    public DcMotor      armMotor; //the arm motor
+    public DcMotor      viperMotor; // the viper slide motor
+    public Servo        intake; //the active intake servo
+    public Servo        wrist; //the wrist servo
+    public SparkFunOTOS otos; // the optical odometry sensor
 
     /* Variables that are used to set the arm and viper to a specific position */
     int armPosition;
@@ -106,15 +106,12 @@ public class TeleOpMain extends LinearOpMode {
             //  ---------------  Gamepad 2 Control --------------
             // Controlling wrist servo
             // wrist servo moves wrist to either horizontal or vertical position
-            if (gamepad2.dpad_down){
-                // wrist vertical
-                wrist.setPosition(0.6);
-                wristVertical = true;
+            if (gamepad2.dpad_down) {
+                wristVertical();
             }
             else if (gamepad2.dpad_up){
                 // wrist horizontal
-                wrist.setPosition(0);
-                wristVertical = false;
+                wristHorizontal();
             }
 
             // // Controlling intake claw servo
@@ -313,8 +310,7 @@ public class TeleOpMain extends LinearOpMode {
         wrist  = hardwareMap.get(Servo.class, "wrist_servo");
 
         /* Starting position with the wrist horizontal and intake open*/
-        //wristHorizontal();
-        wrist.setPosition(0);
+        wristHorizontal();
         intakeOpen();
 
 
