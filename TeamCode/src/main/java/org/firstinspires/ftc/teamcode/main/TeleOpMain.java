@@ -69,6 +69,7 @@ public class TeleOpMain extends LinearOpMode {
     SparkFunOTOS.Pose2D pos;
     // strafer speed compensation factor
     double straferSpeedFactor = 1.5;
+    int viperCalibrationAmount = 100;
 
     @Override
     public void runOpMode() {
@@ -185,6 +186,10 @@ public class TeleOpMain extends LinearOpMode {
             }
             else if (gamepad2.left_bumper){
                 viperPosition -= (int) (2800 * cycleTime);
+            }
+
+            if (gamepad1.dpad_left || gamepad1.dpad_right) {
+                calibrateViper();
             }
 
             /*
@@ -481,7 +486,7 @@ public class TeleOpMain extends LinearOpMode {
                         ) // viper slide unfolded length
                                 * mm // specified length
 
-                ) + 100; //we add 100mm at the end because our viper is not able to completely fold inside (i.e. go to 0mm) while the viper motor continues to try
+                ) + viperCalibrationAmount; //we add 100mm at the end because our viper is not able to completely fold inside (i.e. go to 0mm) while the viper motor continues to try
         // to achieve its target 0mm positionn. This has the result the motor to heat up and get stalled and get destroyed. However the viper motor always achieves the target for 
         //100mm position and thus doesn't get streesed.
 
@@ -526,6 +531,9 @@ public class TeleOpMain extends LinearOpMode {
     }
     public void setViperTargetPosition(){
         viperMotor.setTargetPosition(viperPosition);
+    }
+    public void calibrateViper() {
+        viperCalibrationAmount += viperMotor.getCurrentPosition();
     }
     public void runViper() {
         ((DcMotorEx) viperMotor).setVelocity(3000); //velocity of the viper slide
