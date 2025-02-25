@@ -1,0 +1,15 @@
+@startuml
+interface D{
+    +i(condition: bool): string
+}
+class E implements D{
+    +i(condition: bool): string
+    if (condition) then (yes)
+        return "Action A"
+    else (no)
+        return "Action B"
+
+}
+
+
+@enduml

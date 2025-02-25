@@ -538,7 +538,7 @@ public class TeleOpMain extends LinearOpMode {
 
     //    ---------------- | strafer movement| --------------------------------------------------
     public void straferMovement(){
-        double y = -gamepad1.left_stick_y;
+        double y = -gamepad1.left_stick_y; //
         double x = gamepad1.left_stick_x;
         double rx = gamepad1.right_stick_x;
 
