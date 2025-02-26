@@ -97,9 +97,9 @@ public class TeleOpMain extends LinearOpMode {
             pos = otos.getPosition();
 
 
-            /* Gamepad 1 controls the robot movement (strafing mode) and the positioning of th arm
+            /* Gamepad 1 controls the robot's movement (strafing mode) and the positioning of the arm
             for hanging at the end of the game.
-            Gamepad 2 controls all the arm positioning for scoring samples and specimens and the viper
+            Gamepad 2 controls all the arm positioning for scoring samples and specimens, and the Viper
             movement back and forth.
              */
 
@@ -218,6 +218,7 @@ public class TeleOpMain extends LinearOpMode {
                 wristVertical();
             }
 
+            // handling arm's positioning
             configureFudge();
             setArmTargetPosition();
             runArm();
@@ -283,7 +284,7 @@ public class TeleOpMain extends LinearOpMode {
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
