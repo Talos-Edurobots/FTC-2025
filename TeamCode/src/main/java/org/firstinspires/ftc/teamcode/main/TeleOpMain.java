@@ -154,13 +154,13 @@ public class TeleOpMain extends LinearOpMode {
                 intakeOpen();
             }
             else if (gamepad2.dpad_right){
-                /* This is the correct height to score SPECIMEN on the HIGH CHAMBER */
+                /* This is the correct height to score samples on the LOW BASKET */
                 armScoreSampleInLow();
                 wristHorizontal();
             }
 
 
-            /* Here we set the lift position based on the driver input.
+            /* Here we set the viper position based on the driver input.
             This is a.... weird, way to set the position of a "closed loop" device. The lift is run
             with encoders. So it knows exactly where it is, and there's a limit to how far in and
             out it should run. Normally with mechanisms like this we just tell it to run to an exact
@@ -184,7 +184,9 @@ public class TeleOpMain extends LinearOpMode {
             else if (gamepad2.left_bumper){
                 viperPosition -= (int) (2800 * cycleTime);
             }
-
+            // Attention!! press these buttons ONLY if the viper motor has got stalled! 
+            //This will set current position as starting position for the viper and will 
+            // prevent the stall of the motor and its overheating
             if (gamepad1.dpad_left || gamepad1.dpad_right) {
                 calibrateViper();
             }
@@ -492,12 +494,12 @@ public class TeleOpMain extends LinearOpMode {
     public void setViperPosition(int mm) {
         viperPosition = viperMotorMmToTicks(mm);
     }
-    public void viperScoreInLow() {
-        viperPosition = viperMotorMmToTicks(0);
-    }
-    public void viperScoreInHigh() {
-        viperPosition = viperMotorMmToTicks(380);
-    }
+   // public void viperScoreInLow() {
+   //     viperPosition = viperMotorMmToTicks(0);
+  //  }
+   // public void viperScoreInHigh() {
+   //     viperPosition = viperMotorMmToTicks(380);
+  //  }
     public void viperCollapsed() {
         viperPosition = viperMotorMmToTicks(0);
     }
