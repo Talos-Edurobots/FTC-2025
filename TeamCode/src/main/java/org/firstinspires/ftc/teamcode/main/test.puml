@@ -8,7 +8,6 @@ class E implements D{
         return "Action A"
     else (no)
         return "Action B"
-
 }
 
 

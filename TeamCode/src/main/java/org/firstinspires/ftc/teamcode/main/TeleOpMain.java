@@ -184,7 +184,7 @@ public class TeleOpMain extends LinearOpMode {
             else if (gamepad2.left_bumper){
                 viperPosition -= (int) (2800 * cycleTime);
             }
-
+            // gamepad1 viper calibration position
             if (gamepad1.dpad_left || gamepad1.dpad_right) {
                 calibrateViper();
             }
@@ -335,7 +335,7 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.addData("arm target Position: ", armMotor.getTargetPosition());
         telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
         telemetry.addData("armMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
-        telemetry.addData("viper busy", viperMotor.isBusy());
+        //telemetry.addData("viper busy", viperMotor.isBusy());
         telemetry.addData("viper target Position", viperMotor.getTargetPosition());
         telemetry.addData("viper current position", viperMotor.getCurrentPosition());
         telemetry.addData("viperMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
@@ -403,7 +403,7 @@ public class TeleOpMain extends LinearOpMode {
 
     // these are functions for arm movement
     public void armCollect(){
-        armPosition = armDegreesToTicks(10);
+        armPosition = armDegreesToTicks(15);
     }
     public void armScoreSpecimen() {
         armPosition = armDegreesToTicks(85);
@@ -429,7 +429,10 @@ public class TeleOpMain extends LinearOpMode {
             both triggers an equal amount, they cancel and leave the arm at zero. But if one is larger
             than the other, it "wins out". This variable is then multiplied by our FUDGE_FACTOR.
             The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
-        armPositionFudgeFactor = armDegreesToTicks(15) * (int)(gamepad2.right_trigger + (-gamepad2.left_trigger));
+        armPositionFudgeFactor = (int) (
+                (armDegreesToTicks(10) * gamepad2.right_trigger) +
+                (armDegreesToTicks(15) * (-gamepad2.left_trigger))
+        );
     }
     public void setArmTargetPosition() {
            /* Here we set the target position of our arm to match the variable that was selected
