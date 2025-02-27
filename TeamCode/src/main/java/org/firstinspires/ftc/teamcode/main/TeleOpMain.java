@@ -97,9 +97,9 @@ public class TeleOpMain extends LinearOpMode {
             pos = otos.getPosition();
 
 
-            /* Gamepad 1 controls the robot movement (strafing mode) and the positioning of th arm
+            /* Gamepad 1 controls the robot's movement (strafing mode) and the positioning of the arm
             for hanging at the end of the game.
-            Gamepad 2 controls all the arm positioning for scoring samples and specimens and the viper
+            Gamepad 2 controls all the arm positioning for scoring samples and specimens, and the Viper
             movement back and forth.
              */
 
@@ -184,6 +184,9 @@ public class TeleOpMain extends LinearOpMode {
             else if (gamepad2.left_bumper){
                 viperPosition -= (int) (2800 * cycleTime);
             }
+            // Attention!! press these buttons ONLY if the viper motor has got stalled!
+            //This will set current position as starting position for the viper and will
+            // prevent the stall of the motor and its overheating
             // gamepad1 viper calibration position
             if (gamepad1.dpad_left || gamepad1.dpad_right) {
                 calibrateViper();
@@ -216,6 +219,7 @@ public class TeleOpMain extends LinearOpMode {
                 wristVertical();
             }
 
+            // handling arm's positioning
             configureFudge();
             setArmTargetPosition();
             runArm();
@@ -281,7 +285,7 @@ public class TeleOpMain extends LinearOpMode {
         leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        //viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
 
         /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
@@ -403,7 +407,7 @@ public class TeleOpMain extends LinearOpMode {
 
     // these are functions for arm movement
     public void armCollect(){
-        armPosition = armDegreesToTicks(15);
+        armPosition = armDegreesToTicks(10);
     }
     public void armScoreSpecimen() {
         armPosition = armDegreesToTicks(85);
@@ -495,12 +499,12 @@ public class TeleOpMain extends LinearOpMode {
     public void setViperPosition(int mm) {
         viperPosition = viperMotorMmToTicks(mm);
     }
-    public void viperScoreInLow() {
-        viperPosition = viperMotorMmToTicks(0);
-    }
-    public void viperScoreInHigh() {
-        viperPosition = viperMotorMmToTicks(380);
-    }
+   // public void viperScoreInLow() {
+   //     viperPosition = viperMotorMmToTicks(0);
+  //  }
+   // public void viperScoreInHigh() {
+   //     viperPosition = viperMotorMmToTicks(380);
+  //  }
     public void viperCollapsed() {
         viperPosition = viperMotorMmToTicks(0);
     }
