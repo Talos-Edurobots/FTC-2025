@@ -31,12 +31,13 @@ package org.firstinspires.ftc.teamcode.main;
 /* this is an autonomous program for red. Start centered on tile F2 along wall.
     It uses the SparkFun OTOS sensor to control driving.
     It drives forward to push a sample into the net zone,
-    then moves to tile E2, then backs up to E6 before parking in the 
-    red observation zone. 
+    then moves to tile E2, then backs up to E6 before parking in the
+    red observation zone.
 */
 
 import android.annotation.SuppressLint;
 
+import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
@@ -48,13 +49,14 @@ import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
 @Autonomous(name="ITD_demo2", group="auto")
 //@Disabled
-public class ITD_demo2 extends LinearOpMode {
+public class AutonomousV3 extends LinearOpMode {
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
     //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
@@ -81,6 +83,7 @@ public class ITD_demo2 extends LinearOpMode {
     // Sensors
     private SparkFunOTOS otos;        // Optical tracking odometry sensor
     SparkFunOTOS.Pose2D pos;
+    private IMU imu;
 
     @Override
     public void runOpMode() {
@@ -192,7 +195,15 @@ public class ITD_demo2 extends LinearOpMode {
         telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
         telemetry.update();
     }
-
+    public void initializeIMU() {
+        imu = hardwareMap.get(IMU.class, "imu");
+        // Adjust the orientation parameters to match your robot
+        IMU.Parameters parameters = new IMU.Parameters(new RevHubOrientationOnRobot(
+                RevHubOrientationOnRobot.LogoFacingDirection.UP,
+                RevHubOrientationOnRobot.UsbFacingDirection.BACKWARD));
+        // Without this, the REV Hub's orientation is assumed to be logo up / USB forward
+        imu.initialize(parameters);
+    }
     public void initializeIO() {
         /* Define and Initialize Motors */
         leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
@@ -315,7 +326,7 @@ public class ITD_demo2 extends LinearOpMode {
         */
     SparkFunOTOS.Pose2D myPosition() {
         pos = otos.getPosition();
-        return(new SparkFunOTOS.Pose2D(pos.y, pos.x, -pos.h));
+        return(new SparkFunOTOS.Pose2D(pos.x, pos.y, pos.h));
     }
     /**
      * Move robot according to desired axes motions assuming robot centric point of view
@@ -324,30 +335,23 @@ public class ITD_demo2 extends LinearOpMode {
      * Positive Yaw is clockwise: note this is not how the IMU reports yaw(heading)
      */
     void moveRobot(double x, double y, double yaw) {
+        double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
+        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
+        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
         // Calculate wheel powers.
-        double leftFrontPower    =  x +y +yaw;
-        double rightFrontPower   =  x -y -yaw;
-        double leftBackPower     =  x -y +yaw;
-        double rightBackPower    =  x +y -yaw;
+        double denominator =  Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(yaw), 1);
+        double frontLeftPower = (rotY + rotX + yaw) / denominator;
+        double backLeftPower = (rotY - rotX + yaw) / denominator;
+        double frontRightPower = (rotY - rotX - yaw) / denominator;
+        double backRightPower = (rotY + rotX - yaw) / denominator;
 
-        // Normalize wheel powers to be less than 1.0
-        double max = Math.max(Math.abs(leftFrontPower), Math.abs(rightFrontPower));
-        max = Math.max(max, Math.abs(leftBackPower));
-        max = Math.max(max, Math.abs(rightBackPower));
-
-        if (max > 1.0) {
-            leftFrontPower /= max;
-            rightFrontPower /= max;
-            leftBackPower /= max;
-            rightBackPower /= max;
-        }
 
         // Send powers to the wheels.
-        leftFrontDrive.setPower(leftFrontPower);
-        rightFrontDrive.setPower(rightFrontPower);
-        leftBackDrive.setPower(leftBackPower);
-        rightBackDrive.setPower(rightBackPower);
+        leftFrontDrive.setPower(frontLeftPower);
+        rightFrontDrive.setPower(frontRightPower);
+        leftBackDrive.setPower(backLeftPower);
+        rightBackDrive.setPower(backRightPower);
         sleep(10);
     }
     public void wristHorizontal() {
