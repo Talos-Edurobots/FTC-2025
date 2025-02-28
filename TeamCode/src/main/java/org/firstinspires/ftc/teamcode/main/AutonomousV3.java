@@ -54,7 +54,7 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="ITD_demo2", group="auto")
+@Autonomous(name="AutonomousV3", group="auto")
 //@Disabled
 public class AutonomousV3 extends LinearOpMode {
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
@@ -104,7 +104,7 @@ public class AutonomousV3 extends LinearOpMode {
         telemetry.addData("Status", "Running");
         telemetry.update();
 
-        otosDrive(2, 2, 0, 2);      // small move forward and right away from wall
+        otosDrive(2, 2, 90, 2);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
@@ -206,13 +206,16 @@ public class AutonomousV3 extends LinearOpMode {
     }
     public void initializeIO() {
         /* Define and Initialize Motors */
+
+        initializeIMU();
         leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
         leftBackDrive   = hardwareMap.dcMotor.get("left_back");
         rightFrontDrive = hardwareMap.dcMotor.get("right_front");
         rightBackDrive  = hardwareMap.dcMotor.get("right_back");
         viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
         armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-
+        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        configureOtos();
         // define the optical odometry sensor object
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
 
@@ -252,7 +255,7 @@ public class AutonomousV3 extends LinearOpMode {
         viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         viperMotor.setTargetPosition(0);
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+//        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         /* Define and initialize servos.*/
