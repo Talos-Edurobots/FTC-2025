@@ -9,7 +9,8 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
-
+import com.qualcomm.robotcore.util.Range;
+import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -27,6 +28,21 @@ public class AutonomousMainV1 extends LinearOpMode {
     public Servo wrist; //the wrist servo
     public SparkFunOTOS otos; // the optical odometry sensor
 
+    // ----------------------------------    
+    //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
+    //  applied to the drive motors to correct the error.
+    //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
+    final double SPEED_GAIN  =  0.03;   // 0.02 Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
+    final double STRAFE_GAIN =  0.15;   // 0.015 Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
+    final double TURN_GAIN   =  0.03;   // 0.01 Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
+
+    final double MAX_AUTO_SPEED = 0.4;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_STRAFE= 0.4;   //  Clip the approach speed to this max value (adjust for your robot)
+    final double MAX_AUTO_TURN  = 0.4;   //  Clip the turn speed to this max value (adjust for your robot)
+
+    private ElapsedTime runtime = new ElapsedTime();
+    // -----------------------------------
+    
     /* Variables that are used to set the arm and viper to a specific position */
     int armPosition;
     int armPositionFudgeFactor;
@@ -45,7 +61,7 @@ public class AutonomousMainV1 extends LinearOpMode {
     double cycleTime = 0;
     double loopTime = 0;
     double oldTime = 0;
-    //odometry sensor
+    //odometry sensor position
     SparkFunOTOS.Pose2D pos;
     // strafer speed compensation factor
     double straferSpeedFactor = 1.5;
@@ -65,6 +81,9 @@ public class AutonomousMainV1 extends LinearOpMode {
         if (isStopRequested()) {
             return;
         }
+        //reset runtime
+        runtime.reset();
+        
         // Autonomous operation
         while (opModeIsActive()) {
             gotoPosition(100, 100);
@@ -84,15 +103,19 @@ public class AutonomousMainV1 extends LinearOpMode {
     }
 
     // -------------- Functions ------------------------------
-
-    public void gotoPosition(double x, double y) {
+     /**
+     * Move robot to a designated X,Y position and rx heading
+     * set the maxTime to have the driving logic timeout after a number of seconds.
+     */
+    public void gotoPosition(double x, double y, double rx, int maxTime) {
+        
         SparkFunOTOS.Pose2D currentPosition = otos.getPosition();
         double dx = x - currentPosition.x;
         double dy = y - currentPosition.y;
-        double rx = 0;
+        double drx = rx - currentPosition.h;
 
-
-        double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+       // get robot heading
+       double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         // Rotate the movement direction counter to the bot's rotation
         double rotX = dx * Math.cos(-botHeading) - dy * Math.sin(-botHeading);
@@ -206,6 +229,7 @@ public class AutonomousMainV1 extends LinearOpMode {
 //        telemetry.addData("Y coordinate", pos.y);
 //        telemetry.addData("Heading angle", pos.h);
         telemetry.update();
+        sleep(100);
     }
     public void initializeIO() {
     /* Define and Initialize Motors */
