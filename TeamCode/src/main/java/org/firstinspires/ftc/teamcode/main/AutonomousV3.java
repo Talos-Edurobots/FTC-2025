@@ -104,7 +104,7 @@ public class AutonomousV3 extends LinearOpMode {
         telemetry.addData("Status", "Running");
         telemetry.update();
 
-        otosDrive(0, -7.5, 90, 2);      // small move forward and right away from wall
+        otosDrive(10, 0, 0, 2);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
@@ -139,7 +139,7 @@ public class AutonomousV3 extends LinearOpMode {
         // clockwise (negative rotation) from the robot's orientation, the offset
         // would be {-5, 10, -90}. These can be any value, even the angle can be
         // tweaked slightly to compensate for imperfect mounting (eg. 1.3 degrees).
-        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(-3.75, -7.5, 90); // should be -3.75 & -7.5 and 90
+        SparkFunOTOS.Pose2D offset = new SparkFunOTOS.Pose2D(0, 0, 0); // should be -3.75 & -7.5 and 90
         otos.setOffset(offset);
 
         // Here we can set the linear and angular scalars, which can compensate for
@@ -340,8 +340,8 @@ public class AutonomousV3 extends LinearOpMode {
     void moveRobot(double x, double y, double yaw) {
         double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
-        double rotX = x * Math.cos(-botHeading) - y * Math.sin(-botHeading);
-        double rotY = x * Math.sin(-botHeading) + y * Math.cos(-botHeading);
+        double rotX = x * Math.cos(-yaw) - y * Math.sin(-yaw);
+        double rotY = x * Math.sin(-yaw) + y * Math.cos(-yaw);
         // Calculate wheel powers.
         double denominator =  Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(yaw), 1);
         double frontLeftPower = (rotY + rotX + yaw) / denominator;
