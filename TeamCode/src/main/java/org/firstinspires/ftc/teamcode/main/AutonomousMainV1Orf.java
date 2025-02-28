@@ -85,9 +85,17 @@ public class AutonomousMainV1 extends LinearOpMode {
         runtime.reset();
         
         // Autonomous operation
-        while (opModeIsActive()) {
-            gotoPosition(100, 100);
-        }
+         while(opModeIsActive() && (runtime.milliseconds() < maxTime*1000) &&
+        ((Math.abs(dx) > 1.5) || (Math.abs(dy) > 1.5) || (Math.abs(drx) > 4)) ) {
+
+             
+             gotoPosition(200, 0, 0, 2);
+         }
+        
+       // while (opModeIsActive()) {
+       //     gotoPosition(200, 0, 0, 2);
+       // }
+        
         /* Handling viper's position
          * we normalize the viper motor position
          * we set the position as target position
@@ -115,18 +123,18 @@ public class AutonomousMainV1 extends LinearOpMode {
         double drx = rx - currentPosition.h;
 
        // get robot heading
-       double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
+       // double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         // Rotate the movement direction counter to the bot's rotation
-        double rotX = dx * Math.cos(-botHeading) - dy * Math.sin(-botHeading);
-        double rotY = dx * Math.sin(-botHeading) + dy * Math.cos(-botHeading);
+        double rotX = dx * Math.cos(-drx) - dy * Math.sin(-drx);
+        double rotY = dx * Math.sin(-drx) + dy * Math.cos(-drx);
 
         rotX *= 1.1;  // Counteract imperfect strafing
 
         // Denominator is the largest motor power (absolute value) or 1
         // This ensures all the powers maintain the same ratio,
         // but only if at least one is out of the range [-1, 1]
-        double denominator = straferSpeedFactor * Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(rx), 1);
+        double denominator = straferSpeedFactor * Math.max(Math.abs(rotY) + Math.abs(rotX) + Math.abs(drx), 1);
         double frontLeftPower = (rotY + rotX) / denominator;
         double backLeftPower = (rotY - rotX) / denominator;
         double frontRightPower = (rotY - rotX) / denominator;
@@ -142,6 +150,8 @@ public class AutonomousMainV1 extends LinearOpMode {
         leftBackDrive.setPower(backLeftPower);
         rightFrontDrive.setPower(frontRightPower);
         rightBackDrive.setPower(backRightPower);
+
+        sleep(10);
     }
 
     public void configureOtos() {
