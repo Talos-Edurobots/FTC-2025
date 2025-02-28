@@ -104,7 +104,7 @@ public class AutonomousV3 extends LinearOpMode {
         telemetry.addData("Status", "Running");
         telemetry.update();
 
-        otosDrive(10, 0, 0, 2);      // small move forward and right away from wall
+        otosDrive(0, 50, 0, 2);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
