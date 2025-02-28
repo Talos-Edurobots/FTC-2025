@@ -28,7 +28,7 @@ public class AutonomousMainV1 extends LinearOpMode {
     public Servo wrist; //the wrist servo
     public SparkFunOTOS otos; // the optical odometry sensor
 
-    // ----------------------------------    
+    // ----------------------------------
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
     //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
@@ -42,7 +42,7 @@ public class AutonomousMainV1 extends LinearOpMode {
 
     private ElapsedTime runtime = new ElapsedTime();
     // -----------------------------------
-    
+
     /* Variables that are used to set the arm and viper to a specific position */
     int armPosition;
     int armPositionFudgeFactor;
@@ -83,19 +83,19 @@ public class AutonomousMainV1 extends LinearOpMode {
         }
         //reset runtime
         runtime.reset();
-        
-        // Autonomous operation
-         while(opModeIsActive() && (runtime.milliseconds() < maxTime*1000) &&
-        ((Math.abs(dx) > 1.5) || (Math.abs(dy) > 1.5) || (Math.abs(drx) > 4)) ) {
 
-             
+        // Autonomous operation
+//         while(opModeIsActive() && (runtime.milliseconds() < maxTime*1000) &&
+//        ((Math.abs(dx) > 1.5) || (Math.abs(dy) > 1.5) || (Math.abs(drx) > 4)) ) {
+        while (opModeIsActive()){
+
              gotoPosition(200, 0, 0, 2);
          }
-        
+
        // while (opModeIsActive()) {
        //     gotoPosition(200, 0, 0, 2);
        // }
-        
+
         /* Handling viper's position
          * we normalize the viper motor position
          * we set the position as target position
@@ -116,7 +116,7 @@ public class AutonomousMainV1 extends LinearOpMode {
      * set the maxTime to have the driving logic timeout after a number of seconds.
      */
     public void gotoPosition(double x, double y, double rx, int maxTime) {
-        
+
         SparkFunOTOS.Pose2D currentPosition = otos.getPosition();
         double dx = x - currentPosition.x;
         double dy = y - currentPosition.y;

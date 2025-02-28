@@ -39,12 +39,16 @@ import android.annotation.SuppressLint;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 
+import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
@@ -69,6 +73,10 @@ public class ITD_demo2 extends LinearOpMode {
     private DcMotor leftBackDrive;
     private DcMotor rightFrontDrive;
     private DcMotor rightBackDrive;
+    private DcMotor armMotor;
+    private DcMotor viperMotor;
+    private Servo intake;
+    private Servo wrist;
 
     // Sensors
     private SparkFunOTOS otos;        // Optical tracking odometry sensor
@@ -79,22 +87,8 @@ public class ITD_demo2 extends LinearOpMode {
 
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
-        leftFrontDrive  = hardwareMap.get(DcMotor.class, "drive_leftFront");
-        leftBackDrive  = hardwareMap.get(DcMotor.class, "drive_leftBack");
-        rightFrontDrive = hardwareMap.get(DcMotor.class, "drive_rightFront");
-        rightBackDrive = hardwareMap.get(DcMotor.class, "drive_rightBack");
-
-        leftFrontDrive.setDirection(DcMotor.Direction.FORWARD);
-        leftBackDrive.setDirection(DcMotor.Direction.FORWARD);
-        rightFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        rightBackDrive.setDirection(DcMotor.Direction.REVERSE);
-
-        // Get a reference to the sensor
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
-        // All the configuration for the OTOS is done in this helper method, check it out!
-        configureOtos();
+        initializeIO();
         sleep(1000);
-
 
         while(!isStarted()) {
             // Wait for the game to start (driver presses PLAY)
@@ -200,6 +194,70 @@ public class ITD_demo2 extends LinearOpMode {
         telemetry.update();
     }
 
+    public void initializeIO() {
+        /* Define and Initialize Motors */
+        leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
+        leftBackDrive   = hardwareMap.dcMotor.get("left_back");
+        rightFrontDrive = hardwareMap.dcMotor.get("right_front");
+        rightBackDrive  = hardwareMap.dcMotor.get("right_back");
+        viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
+        armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
+
+        // define the optical odometry sensor object
+        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+
+       /*
+       we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
+       drive motors to go forward.
+        */
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
+        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
+        stops much quicker. */
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
+        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
+        ((DcMotorEx) armMotor).setCurrentAlert(5, CurrentUnit.AMPS);
+
+        /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
+        ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+        /* Before starting the arm and viper motors. We'll make sure the TargetPosition is set to 0.
+        Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
+        If you do not have the encoder plugged into this motor, it will not run in this code. */
+
+        armMotor.setTargetPosition(0);
+        armMotor.setDirection(DcMotor.Direction.REVERSE);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        viperMotor.setTargetPosition(0);
+        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        /* Define and initialize servos.*/
+        intake = hardwareMap.get(Servo.class, "intake_servo");
+        wrist  = hardwareMap.get(Servo.class, "wrist_servo");
+
+        /* Starting position with the wrist horizontal and intake open*/
+        wristHorizontal();
+        intakeOpen();
+
+
+        /* Send telemetry message to signify robot waiting */
+        telemetry.addLine("Robot Ready.");
+        telemetry.update();
+    }
     /**
      * Move robot to a designated X,Y position and heading
      * set the maxTime to have the driving logic timeout after a number of seconds.
@@ -256,9 +314,9 @@ public class ITD_demo2 extends LinearOpMode {
     /* the reported OTOS values are based on sensor orientation, convert to robot centric
         by swapping x and y and changing the sign of the heading
         */
-    SparkFunOTOS.Pose2D myPosition() { // to check !!!!!!!!!!!!!!
+    SparkFunOTOS.Pose2D myPosition() {
         pos = otos.getPosition();
-        return(new SparkFunOTOS.Pose2D(pos.x, pos.y, -pos.h));
+        return(new SparkFunOTOS.Pose2D(pos.y, pos.x, -pos.h));
     }
     /**
      * Move robot according to desired axes motions assuming robot centric point of view
@@ -292,5 +350,17 @@ public class ITD_demo2 extends LinearOpMode {
         leftBackDrive.setPower(leftBackPower);
         rightBackDrive.setPower(rightBackPower);
         sleep(10);
+    }
+    public void wristHorizontal() {
+        wrist.setPosition(0);
+    }
+    public void wristVertical() {
+        wrist.setPosition(0.60);
+    }
+    public void intakeOpen() {
+        intake.setPosition(0); // intake open
+    }
+    public void intakeCollect() {
+        intake.setPosition(1);
     }
 }
