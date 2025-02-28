@@ -257,7 +257,7 @@ public class TeleOpMain extends LinearOpMode {
         }
     }
 
-    //    ---------------- | initialization, output | ----------------------------------------------------------
+    //    ---------------- | initialization, output | ---------------------------------------------------------------------------------------------------------------------------------------------
     public void initializeIO() {
         /* Define and Initialize Motors */
         leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
@@ -354,7 +354,7 @@ public class TeleOpMain extends LinearOpMode {
         telemetry.update();
     }
 
-    // ---------------- | arm position handling| ------------------------------------------------------------------------
+    // ---------------- | arm position handling| ----------------------------------------------------------------------------------------------------------------------------------
 
 
     public int armDegreesToTicks(double degrees) {
