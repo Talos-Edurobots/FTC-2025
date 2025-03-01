@@ -101,7 +101,7 @@ public class ITD_demo2 extends LinearOpMode {
         telemetry.addData("Status", "Running");
         telemetry.update();
 
-        otosDrive(20, 0, 0, 1);      // small move forward and right away from wall
+        otosDrive(20, 0, 0, 3);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
@@ -276,9 +276,9 @@ public class ITD_demo2 extends LinearOpMode {
         while(opModeIsActive() && (runtime.milliseconds() < maxTime*1000) &&
                 ((Math.abs(xError) > 1.5) || (Math.abs(yError) > 1.5) || (Math.abs(yawError) > 4)) ) {
             // Use the speed and turn "gains" to calculate how we want the robot to move.
-            drive  = Range.clip(xError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            strafe = Range.clip(yError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
-            turn   = Range.clip(yawError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
+            drive  = xError; //Range.clip(xError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+            strafe = yError; // Range.clip(yError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            turn   = yawError; //Range.clip(yawError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
 
             telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
             // current x,y swapped due to 90 degree rotation
