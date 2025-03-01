@@ -25,9 +25,9 @@ public class Orf_demo2 extends LinearOpMode {
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
     //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
-    final double SPEED_GAIN  =  0.01;   // 0.02 Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
+    final double SPEED_GAIN  =  0.115;   // 0.02 Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
     final double STRAFE_GAIN =  0.01;   // 0.015 Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
-    final double TURN_GAIN   =  0.01;   // 0.01 Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
+    final double TURN_GAIN   =  0.003;   // 0.01 Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
 
     final double MAX_AUTO_SPEED = 0.4;   //  Clip the approach speed to this max value (adjust for your robot)
     final double MAX_AUTO_STRAFE= 0.4;   //  Clip the approach speed to this max value (adjust for your robot)
@@ -44,6 +44,7 @@ public class Orf_demo2 extends LinearOpMode {
     private DcMotor viperMotor;
     private Servo intake;
     private Servo wrist;
+    private int armPosition;
 
     // Sensors
     private SparkFunOTOS otos;        // Optical tracking odometry sensor
@@ -68,14 +69,82 @@ public class Orf_demo2 extends LinearOpMode {
 
         telemetry.addData("Status", "Running");
         telemetry.update();
-
-        otosDrive(0, 20, 0, 2);      // small move forward and right away from wall
+        armPosition = armDegreesToTicks(20);
+        setArmTargetPosition();
+        runArm();
+        sleep(1000);
+        otosDrive(0, 100, 0, 2);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
 //        otosDrive(-87, 4, 0, 2);    // park in observation zone
 
         sleep(10000);
+    }
+
+    public void initializeIO() {
+        /* Define and Initialize Motors */
+        leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
+        leftBackDrive   = hardwareMap.dcMotor.get("left_back");
+        rightFrontDrive = hardwareMap.dcMotor.get("right_front");
+        rightBackDrive  = hardwareMap.dcMotor.get("right_back");
+        viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
+        armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
+        otos            = hardwareMap.get(SparkFunOTOS.class, "otos");
+
+        // define the optical odometry sensor object
+
+       /*
+       we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
+       drive motors to go forward.
+        */
+        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
+        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
+
+        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
+        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
+        stops much quicker. */
+        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+
+
+        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
+        ((DcMotorEx) armMotor).setCurrentAlert(5, CurrentUnit.AMPS);
+
+        /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
+        ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
+
+        /* Before starting the arm and viper motors. We'll make sure the TargetPosition is set to 0.
+        Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
+        If you do not have the encoder plugged into this motor, it will not run in this code. */
+
+        armMotor.setTargetPosition(0);
+        armMotor.setDirection(DcMotor.Direction.REVERSE);
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
+        viperMotor.setTargetPosition(0);
+        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
+        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+
+
+        /* Define and initialize servos.*/
+        intake = hardwareMap.get(Servo.class, "intake_servo");
+        wrist  = hardwareMap.get(Servo.class, "wrist_servo");
+
+        /* Starting position with the wrist horizontal and intake open*/
+        wristHorizontal();
+        intakeOpen();
+
+
+        /* Send telemetry message to signify robot waiting */
+        telemetry.addLine("Robot Ready.");
+        telemetry.update();
     }
 
     @SuppressLint("DefaultLocale")
@@ -160,71 +229,6 @@ public class Orf_demo2 extends LinearOpMode {
         telemetry.addLine(String.format("OTOS Firmware Version: v%d.%d", fwVersion.major, fwVersion.minor));
         telemetry.update();
     }
-
-    public void initializeIO() {
-        /* Define and Initialize Motors */
-        leftFrontDrive  = hardwareMap.dcMotor.get("left_front");
-        leftBackDrive   = hardwareMap.dcMotor.get("left_back");
-        rightFrontDrive = hardwareMap.dcMotor.get("right_front");
-        rightBackDrive  = hardwareMap.dcMotor.get("right_back");
-        viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
-        armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-
-        // define the optical odometry sensor object
-        //otos = hardwareMap.get(SparkFunOTOS.class, "otos");
-
-       /*
-       we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
-       drive motors to go forward.
-        */
-        leftFrontDrive.setDirection(DcMotor.Direction.REVERSE);
-        leftBackDrive.setDirection(DcMotor.Direction.REVERSE);
-
-        /* Setting zeroPowerBehavior to BRAKE enables a "brake mode". This causes the motor to slow down
-        much faster when it is coasting. This creates a much more controllable drivetrain. As the robot
-        stops much quicker. */
-        leftFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightFrontDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rightBackDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        armMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        viperMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-
-
-        /*This sets the maximum current that the control hub will apply to the arm before throwing a flag */
-        ((DcMotorEx) armMotor).setCurrentAlert(5, CurrentUnit.AMPS);
-
-        /*This sets the maximum current that the control hub will apply to the viper motor before throwing a flag */
-        ((DcMotorEx) viperMotor).setCurrentAlert(5,CurrentUnit.AMPS);
-
-        /* Before starting the arm and viper motors. We'll make sure the TargetPosition is set to 0.
-        Then we'll set the RunMode to RUN_TO_POSITION. And we'll ask it to stop and reset encoder.
-        If you do not have the encoder plugged into this motor, it will not run in this code. */
-
-        armMotor.setTargetPosition(0);
-        armMotor.setDirection(DcMotor.Direction.REVERSE);
-        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        armMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-        viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
-        viperMotor.setTargetPosition(0);
-        viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-
-
-        /* Define and initialize servos.*/
-        intake = hardwareMap.get(Servo.class, "intake_servo");
-        wrist  = hardwareMap.get(Servo.class, "wrist_servo");
-
-        /* Starting position with the wrist horizontal and intake open*/
-        wristHorizontal();
-        intakeOpen();
-
-
-        /* Send telemetry message to signify robot waiting */
-        telemetry.addLine("Robot Ready.");
-        telemetry.update();
-    }
     /**
      * Move robot to a designated X,Y position and heading
      * set the maxTime to have the driving logic timeout after a number of seconds.
@@ -244,9 +248,9 @@ public class Orf_demo2 extends LinearOpMode {
         while(opModeIsActive() && (runtime.milliseconds() < maxTime*1000) &&
                 ((Math.abs(xError) > 1.5) || (Math.abs(yError) > 1.5) || (Math.abs(yawError) > 4)) ) {
             // Use the speed and turn "gains" to calculate how we want the robot to move.
-            drive  = yError; //Range.clip(xError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            strafe = xError; // Range.clip(yError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
-            turn   = yawError; //Range.clip(yawError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
+            drive  =  Range.clip(yError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+            strafe =  Range.clip(xError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            turn   =  Range.clip(yawError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
 
             telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
             // current x,y swapped due to 90 degree rotation
@@ -275,6 +279,8 @@ public class Orf_demo2 extends LinearOpMode {
         telemetry.addData("current X coordinate", currentPos.x);
         telemetry.addData("current Y coordinate", currentPos.y);
         telemetry.addData("current Heading angle", currentPos.h);
+        telemetry.addData("arm target pos", armMotor.getTargetPosition());
+        telemetry.addData("arm current pos", armMotor.getCurrentPosition());
         telemetry.update();
     }
 
@@ -330,4 +336,44 @@ public class Orf_demo2 extends LinearOpMode {
     public void intakeCollect() {
         intake.setPosition(1);
     }
+    public int viperMotorMmToTicks(int mm) {
+        /*
+         * 312 rpm motor: 537.7 ticks per revolution
+         * 4 stage viper slide (240mm): 5,8 rotations to fully expand
+         * max travel distance: 696mm
+         * ticks per mm = (537,7 * 5,8) ticks / (696) mm = 4,48 ticks / mm
+         */
+        return (int)
+                (
+                        (
+                                (
+                                        537.7 * 5.8
+                                ) // total ticks
+                                        / 696
+                        ) // viper slide unfolded length
+                                * mm // specified length
+
+                );
+        // to achieve its target 0mm positionn. This has the result the motor to heat up and get stalled and get destroyed. However the viper motor always achieves the target for
+        //100mm position and thus doesn't get streesed.
+    }
+    public int armDegreesToTicks(double degrees) {
+        /* this function converts degrees to ticks for the arm motor */
+        return (int) (
+                28 // number of encoder ticks per rotation of the bare motor
+                        * 250047.0 / 4913.0 // This is the exact gear ratio of the 50.9:1 Yellow Jacket gearbox
+                        * 100.0 / 20.0 // This is the external gear reduction, a 20T pinion gear that drives a 100T hub-mount gear
+                        * 1/360.0 // we want ticks per degree, not per rotation
+                        * degrees // the specified degrees
+        );
+
+    }
+    public void setArmTargetPosition() {
+        armMotor.setTargetPosition(armPosition);
+    }
+    public void runArm() {
+        ((DcMotorEx) armMotor).setVelocity(2500); // 2500
+        armMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION); // we finally run the arm motor
+    }
+
 }
