@@ -68,7 +68,7 @@ public class TeleOpMain extends LinearOpMode {
     //odometry sensor
     SparkFunOTOS.Pose2D pos;
     // strafer speed compensation factor
-    double straferSpeedFactor = 1.5;
+    double straferSpeedFactor = 1.2;
     int viperCalibrationAmount = 100;
 
     @Override
@@ -119,12 +119,12 @@ public class TeleOpMain extends LinearOpMode {
             * our intake claw is always closed unless left_stick_y or right_stick_y of gamepad2 are
             * facing down or either right_stick_button and left_stick_button are pressed on gamepad2.
             */
-            if (gamepad2.left_stick_y < -0.05 || gamepad2.right_stick_y < -0.05 || gamepad2.right_stick_button || gamepad2.left_stick_button){
-                intakeOpen();
-            }
-            else {
-                intakeCollect();
-            }
+//            if (gamepad2.left_stick_y < -0.05 || gamepad2.right_stick_y < -0.05 || gamepad2.right_stick_button || gamepad2.left_stick_button){
+//                intakeOpen();
+//            }
+//            else {
+//                intakeCollect();
+//            }
 
             //Controlling arm positioning using buttons
             if(gamepad2.a){ // ps4: X
@@ -159,7 +159,12 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
             }
 
-
+            if (gamepad2.right_bumper) {
+                intakeOpen();
+            }
+            else {
+                intakeCollect();
+            }
             /* Here we set the lift position based on the driver input.
             This is a.... weird, way to set the position of a "closed loop" device. The lift is run
             with encoders. So it knows exactly where it is, and there's a limit to how far in and
@@ -178,10 +183,10 @@ public class TeleOpMain extends LinearOpMode {
             that our lift can move 2800mm in one cycle, but since each cycle is only a fraction of a second,
             we are only incrementing it a small amount each cycle.
              */
-            if (gamepad2.right_bumper){
+            if (gamepad2.left_stick_y <= -.25){
                 viperPosition += (int) (2800 * cycleTime);
             }
-            else if (gamepad2.left_bumper){
+            else if (gamepad2.left_stick_y >= .25){
                 viperPosition -= (int) (2800 * cycleTime);
             }
             // Attention!! press these buttons ONLY if the viper motor has got stalled!
@@ -210,13 +215,13 @@ public class TeleOpMain extends LinearOpMode {
              if (gamepad1.dpad_up){
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
                 armAttachHangingHook();
-                wristVertical();
+               // wristVertical();
             }
 
             else if (gamepad1.dpad_down){
                 /* this moves the arm down to lift the robot up once it has been hooked */
                 armWinchRobot();
-                wristVertical();
+                //wristVertical();
             }
 
             // handling arm's positioning
@@ -336,13 +341,13 @@ public class TeleOpMain extends LinearOpMode {
     public void output(){
         /* send telemetry to the driver of the arm's current position and target position */
         telemetry.addLine("Version: Android 5 orfanak");
+        telemetry.addData("armMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
+        telemetry.addData("viperMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("arm target Position: ", armMotor.getTargetPosition());
         telemetry.addData("arm current position: ", armMotor.getCurrentPosition());
-        telemetry.addData("armMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
         //telemetry.addData("viper busy", viperMotor.isBusy());
         telemetry.addData("viper target Position", viperMotor.getTargetPosition());
         telemetry.addData("viper current position", viperMotor.getCurrentPosition());
-        telemetry.addData("viperMotor Current:",((DcMotorEx) viperMotor).getCurrent(CurrentUnit.AMPS));
         telemetry.addData("cycle time sec",cycleTime);
         telemetry.addData("wrist pos", wrist.getPosition());
         telemetry.addData("intake pos", intake.getPosition());
@@ -420,10 +425,10 @@ public class TeleOpMain extends LinearOpMode {
     }
 
     public void armScoreSampleInLow() {
-        armPosition = armDegreesToTicks(95);
+        armPosition = armDegreesToTicks(105);
     }
     public void armWinchRobot() {
-        armPosition = armDegreesToTicks(10);
+        armPosition = armDegreesToTicks(0);
     }
     public void configureFudge() {
             /* Here we create a "fudge factor" for the arm position.

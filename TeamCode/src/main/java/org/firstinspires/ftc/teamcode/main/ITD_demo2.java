@@ -101,13 +101,13 @@ public class ITD_demo2 extends LinearOpMode {
         telemetry.addData("Status", "Running");
         telemetry.update();
 
-        otosDrive(2, 2, 0, 2);      // small move forward and right away from wall
+        otosDrive(50, 0, 0, 1);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
 //        otosDrive(-87, 4, 0, 2);    // park in observation zone
 
-        sleep(1000);
+        sleep(10000);
     }
 
     @SuppressLint("DefaultLocale")
@@ -155,8 +155,8 @@ public class ITD_demo2 extends LinearOpMode {
         // multiple speeds to get an average, then set the linear scalar to the
         // inverse of the error. For example, if you move the robot 100 inches and
         // the sensor reports 103 inches, set the linear scalar to 100/103 = 0.971
-        otos.setLinearScalar(1.008);
-        otos.setAngularScalar(0.992);
+        otos.setLinearScalar(1);
+        otos.setAngularScalar(1);
 
         // The IMU on the OTOS includes a gyroscope and accelerometer, which could
         // have an offset. Note that as of firmware version 1.0, the calibration
@@ -315,7 +315,7 @@ public class ITD_demo2 extends LinearOpMode {
         */
     SparkFunOTOS.Pose2D myPosition() {
         pos = otos.getPosition();
-        return(new SparkFunOTOS.Pose2D(pos.y, pos.x, -pos.h));
+        return(new SparkFunOTOS.Pose2D(pos.x, pos.y, pos.h));
     }
     /**
      * Move robot according to desired axes motions assuming robot centric point of view

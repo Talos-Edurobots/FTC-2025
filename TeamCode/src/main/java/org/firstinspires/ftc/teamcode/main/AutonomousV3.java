@@ -214,7 +214,7 @@ public class AutonomousV3 extends LinearOpMode {
         rightBackDrive  = hardwareMap.dcMotor.get("right_back");
         viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
         armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        otos            = hardwareMap.get(SparkFunOTOS.class, "otos");
         configureOtos();
         // define the optical odometry sensor object
         otos = hardwareMap.get(SparkFunOTOS.class, "otos");
@@ -255,7 +255,7 @@ public class AutonomousV3 extends LinearOpMode {
         viperMotor.setDirection(DcMotorSimple.Direction.REVERSE);
         viperMotor.setTargetPosition(0);
         viperMotor.setMode(DcMotor.RunMode.RUN_TO_POSITION);
-//        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        viperMotor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
 
         /* Define and initialize servos.*/
