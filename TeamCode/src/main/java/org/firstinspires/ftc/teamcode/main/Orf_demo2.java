@@ -1,39 +1,6 @@
-/* Copyright (c) 2021 FIRST. All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without modification,
- * are permitted (subject to the limitations in the disclaimer below) provided that
- * the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright notice, this list
- * of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright notice, this
- * list of conditions and the following disclaimer in the documentation and/or
- * other materials provided with the distribution.
- *
- * Neither the name of FIRST nor the names of its contributors may be used to endorse or
- * promote products derived from this software without specific prior written permission.
- *
- * NO EXPRESS OR IMPLIED LICENSES TO ANY PARTY'S PATENT RIGHTS ARE GRANTED BY THIS
- * LICENSE. THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
- * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE
- * FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
- * DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- * SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- * CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
- * OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
- */
+
 
 package org.firstinspires.ftc.teamcode.main;
-/* this is an autonomous program for red. Start centered on tile F2 along wall.
-    It uses the SparkFun OTOS sensor to control driving.
-    It drives forward to push a sample into the net zone,
-    then moves to tile E2, then backs up to E6 before parking in the 
-    red observation zone. 
-*/
 
 import android.annotation.SuppressLint;
 
@@ -52,15 +19,15 @@ import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.robotcore.util.Range;
 import com.qualcomm.robotcore.util.ElapsedTime;
 
-@Autonomous(name="ITD_demo2", group="auto")
+@Autonomous(name="Orf_demo2", group="auto")
 //@Disabled
-public class ITD_demo2 extends LinearOpMode {
+public class Orf_demo2 extends LinearOpMode {
     //  Set the GAIN constants to control the relationship between the measured position error, and how much power is
     //  applied to the drive motors to correct the error.
     //  Drive = Error * Gain    Make these values smaller for smoother control, or larger for a more aggressive response.
-    final double SPEED_GAIN  =  0.02;   // 0.02 Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
-    final double STRAFE_GAIN =  0.015;   // 0.015 Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
-    final double TURN_GAIN   =  0.02;   // 0.01 Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
+    final double SPEED_GAIN  =  0.01;   // 0.02 Forward Speed Control "Gain". eg: Ramp up to 50% power at a 25 inch error.   (0.50 / 25.0)
+    final double STRAFE_GAIN =  0.01;   // 0.015 Strafe Speed Control "Gain".  eg: Ramp up to 25% power at a 25 degree Yaw error.   (0.25 / 25.0)
+    final double TURN_GAIN   =  0.01;   // 0.01 Turn Control "Gain".  eg: Ramp up to 25% power at a 25 degree error. (0.25 / 25.0)
 
     final double MAX_AUTO_SPEED = 0.4;   //  Clip the approach speed to this max value (adjust for your robot)
     final double MAX_AUTO_STRAFE= 0.4;   //  Clip the approach speed to this max value (adjust for your robot)
@@ -88,6 +55,7 @@ public class ITD_demo2 extends LinearOpMode {
         // Initialize the hardware variables. Note that the strings used here must correspond
         // to the names assigned during the robot configuration step on the DS or RC devices.
         initializeIO();
+        configureOtos();
         sleep(100);
 
         while(!isStarted()) {
@@ -101,7 +69,7 @@ public class ITD_demo2 extends LinearOpMode {
         telemetry.addData("Status", "Running");
         telemetry.update();
 
-        otosDrive(20, 0, 0, 3);      // small move forward and right away from wall
+        otosDrive(0, 20, 0, 2);      // small move forward and right away from wall
 //        otosDrive(18, 2, 0, 2);     // forward and push sample into net zone
 //        otosDrive(0, 24, 0, 2);     // backup and move away from wall
 //        otosDrive(-87, 24, 0, 4);   // backup straight
@@ -203,7 +171,7 @@ public class ITD_demo2 extends LinearOpMode {
         armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
 
         // define the optical odometry sensor object
-        otos = hardwareMap.get(SparkFunOTOS.class, "otos");
+        //otos = hardwareMap.get(SparkFunOTOS.class, "otos");
 
        /*
        we need to reverse the left side of the drivetrain so it doesn't turn when we ask all the
@@ -276,8 +244,8 @@ public class ITD_demo2 extends LinearOpMode {
         while(opModeIsActive() && (runtime.milliseconds() < maxTime*1000) &&
                 ((Math.abs(xError) > 1.5) || (Math.abs(yError) > 1.5) || (Math.abs(yawError) > 4)) ) {
             // Use the speed and turn "gains" to calculate how we want the robot to move.
-            drive  = xError; //Range.clip(xError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
-            strafe = yError; // Range.clip(yError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
+            drive  = yError; //Range.clip(xError * SPEED_GAIN, -MAX_AUTO_SPEED, MAX_AUTO_SPEED);
+            strafe = xError; // Range.clip(yError * STRAFE_GAIN, -MAX_AUTO_STRAFE, MAX_AUTO_STRAFE);
             turn   = yawError; //Range.clip(yawError * TURN_GAIN, -MAX_AUTO_TURN, MAX_AUTO_TURN) ;
 
             telemetry.addData("Auto","Drive %5.2f, Strafe %5.2f, Turn %5.2f ", drive, strafe, turn);
