@@ -41,10 +41,8 @@ public class TeleOpMain extends LinearOpMode {
     public DcMotor      rightFrontDrive; //the right front drivetrain motor
     public DcMotor      leftBackDrive; //the left back drivetrain motor
     public DcMotor      rightBackDrive; //the right bacck drivetrain motor
-    public DcMotor      armMotor; //the arm motor
-    public DcMotor      viperMotor; // the viper slide motor
-    public Servo        intake; //the active intake servo
-    public Servo        wrist; //the wrist servo
+
+
     public SparkFunOTOS otos; // the optical odometry sensor
 
     /* Variables that are used to set the arm and viper to a specific position */
