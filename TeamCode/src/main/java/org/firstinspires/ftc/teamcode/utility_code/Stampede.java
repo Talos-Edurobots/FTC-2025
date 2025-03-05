@@ -1,19 +1,9 @@
 package org.firstinspires.ftc.teamcode.utility_code;
 
 import static com.qualcomm.robotcore.hardware.DcMotor.ZeroPowerBehavior.BRAKE;
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
-import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
-import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
-import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.IMU;
-import com.qualcomm.robotcore.hardware.Servo;
+import static org.firstinspires.ftc.robotcore.external.BlocksOpModeCompanion.hardwareMap;
 
-import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
+import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -21,13 +11,10 @@ import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
-import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorEx;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
-import com.qualcomm.robotcore.hardware.Servo;
-//import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-//import org.apache.commons.math3.linear.ArrayRealVector;
-//import org.apache.commons.math3.linear.LUDecomposition;
+
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.LUDecomposition;
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 import org.firstinspires.ftc.robotcore.external.navigation.AngleUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
@@ -39,19 +26,14 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  */
 public class Stampede {
     /* Public OpMode members. */
-    public DcMotorEx driveFrontLeft = hardwareMap.dcMotor.get("left_front"); //orf
-    public DcMotorEx driveFrontRight = hardwareMap.dcMotor.get("right_front"); //orf
-    public DcMotorEx driveRearLeft = hardwareMap.dcMotor.get("left_back"); // orf
-    public DcMotorEx driveRearRight = hardwareMap.dcMotor.get("right_back"); //orf
-    public DcMotorEx odopodLeft = null;
-    public DcMotorEx odopodRight = null;
-    public DcMotorEx odopodMiddle = null;
-    
-// orf
-      viperMotor      = hardwareMap.dcMotor.get("viper_motor"); // linear viper slide motor
-      armMotor        = hardwareMap.get(DcMotor.class, "dc_arm"); //the arm motor
-    //  otos            = hardwareMap.get(SparkFunOTOS.class, "otos");
-//orf
+    public DcMotor driveFrontLeft = hardwareMap.dcMotor.get("left_front"); //orf
+    public DcMotor driveFrontRight = hardwareMap.dcMotor.get("right_front"); //orf
+    public DcMotor driveRearLeft = hardwareMap.dcMotor.get("left_back"); // orf
+    public DcMotor driveRearRight = hardwareMap.dcMotor.get("right_back"); //orf
+    public DcMotor odopodLeft = null;
+    public DcMotor odopodRight = null;
+    public DcMotor odopodMiddle = null;
+
     public SparkFunOTOS otos = null;
 
     boolean hasWheelEncoders = false;
