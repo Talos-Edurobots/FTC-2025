@@ -45,8 +45,6 @@ public class TeleOpMain extends LinearOpMode {
     public DcMotor      viperMotor; // the viper slide motor
     public Servo        intake; //the active intake servo
     public Servo        wrist; //the wrist servo
-
-
     public SparkFunOTOS otos; // the optical odometry sensor
 
     /* Variables that are used to set the arm and viper to a specific position */
@@ -161,7 +159,7 @@ public class TeleOpMain extends LinearOpMode {
                 wristHorizontal();
             }
 
-            if (gamepad2.right_bumper || gamepad2.left_bumper) {
+            if (gamepad2.right_bumper) {
                 intakeOpen();
             }
             else {
@@ -340,7 +338,7 @@ public class TeleOpMain extends LinearOpMode {
         imu.initialize(parameters);
     }
 
-    public void output(){
+    public void output() {
         /* send telemetry to the driver of the arm's current position and target position */
         telemetry.addLine("Version: Android 5 orfanak");
         telemetry.addData("armMotor Current:",((DcMotorEx) armMotor).getCurrent(CurrentUnit.AMPS));
@@ -496,15 +494,16 @@ public class TeleOpMain extends LinearOpMode {
                         ) // viper slide unfolded length
                                 * mm // specified length
 
-                ) + viperCalibrationAmount; //we add 100mm at the end because our viper is not able to completely fold inside (i.e. go to 0mm) while the viper motor continues to try
-        // to achieve its target 0mm positionn. This has the result the motor to heat up and get stalled and get destroyed. However the viper motor always achieves the target for 
-        //100mm position and thus doesn't get streesed.
+                ) + viperCalibrationAmount; //we add a correction at the end because our viper
+        // is not able to completely fold inside (i.e. go to 0mm) while the viper motor continues
+        // to try to achieve its target 0mm position. This has the result the motor to heat up and
+        // get stalled and get destroyed. However the viper motor always achieves the target for
+        // 100mm position and thus doesn't get stressed.
     }
     public void setViperPosition(int mm) {
         viperPosition = viperMotorMmToTicks(mm);
     }
-   // public void viperScoreInLow() {
-   //     viperPosition = viperMotorMmToTicks(0);
+    // public void viperScoreInLow() {
    //     viperPosition = viperMotorMmToTicks(0);
   //  }
    // public void viperScoreInHigh() {
@@ -549,8 +548,8 @@ public class TeleOpMain extends LinearOpMode {
     }
 
     //    ---------------- | strafer movement| --------------------------------------------------
-    public void straferMovement(){
-        double y = -gamepad1.left_stick_y; //
+    public void straferMovement() {
+        double y = -gamepad1.left_stick_y;
         double x = gamepad1.left_stick_x;
         double rx = gamepad1.right_stick_x;
 
@@ -562,6 +561,7 @@ public class TeleOpMain extends LinearOpMode {
             imu.resetYaw();
         }
 
+        // get the orientation of the robot
         double botHeading = imu.getRobotYawPitchRollAngles().getYaw(AngleUnit.RADIANS);
 
         // Rotate the movement direction counter to the bot's rotation
