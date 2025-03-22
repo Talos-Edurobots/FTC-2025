@@ -17,5 +17,15 @@ public class Constants {
     );
     public static final int ROBOT_TICKS_PER_MM = 2000 // ticks
             /1205; // mm
+    public static final String VIPER_MOTOR_CONFIGURATION = "viper_motor";
+    public static final String ARM_MOTOR_CONFIGURATION = "dc_arm";
+    public static final String LEFT_FRONT_MOTOR_CONFIGURATION = "left_front";
+    public static final String LEFT_BACK_MOTOR_CONFIGURATION = "left_back";
+    public static final String RIGHT_FRONT_MOTOR_CONFIGURATION = "right_front";
+    public static final String RIGHT_BACK_MOTOR_CONFIGURATION = "right_back";
+    public static final String OTOS_CONFIGURATION = "otos";
+    public static final String IMU_CONFIGURATION = "imu";
+    public static final int ROBOT_HEIGHT_MM = 0;
+    public static final int VIPER_COLLAPSED_LENGTH = 0;
 
 }
