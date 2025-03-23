@@ -5,6 +5,8 @@
 */
 package org.firstinspires.ftc.robotcontroller.external.samples;
 
+import android.annotation.SuppressLint;
+
 import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
@@ -66,12 +68,12 @@ public class SensorSparkFunOTOS extends LinearOpMode {
             telemetry.addData("X coordinate", pos.x);
             telemetry.addData("Y coordinate", pos.y);
             telemetry.addData("Heading angle", pos.h);
-
             // Update the telemetry on the driver station
             telemetry.update();
         }
     }
 
+    @SuppressLint("DefaultLocale")
     private void configureOtos() {
         telemetry.addLine("Configuring OTOS...");
         telemetry.update();
