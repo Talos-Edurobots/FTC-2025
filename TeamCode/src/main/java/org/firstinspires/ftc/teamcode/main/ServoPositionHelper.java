@@ -47,7 +47,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  * D-pad up, or d-pad down.
  */
 
-@TeleOp(name="Servo Position Helper", group="Concept")
+@TeleOp(name="Servo Position Helper!", group="Concept")
 //@Disabled
 public class ServoPositionHelper extends LinearOpMode {
 

@@ -25,7 +25,8 @@ public class Constants {
     public static final String RIGHT_BACK_MOTOR_CONFIGURATION = "right_back";
     public static final String OTOS_CONFIGURATION = "otos";
     public static final String IMU_CONFIGURATION = "imu";
-    public static final int ROBOT_HEIGHT_MM = 0;
-    public static final int VIPER_COLLAPSED_LENGTH = 0;
-
+    public static final int ROBOT_HEIGHT_MM = 340;
+    public static final int VIPER_COLLAPSED_LENGTH = 480;
+    public static final int VIPER_EXTENDED_LENGTH = 696;
+    public static final int ARM_VELOCITY = 2500;
 }

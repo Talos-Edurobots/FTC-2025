@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
-public enum Unit {
+public enum Units {
     VIPER_MM,
     VIPER_TICKS,
     ARM_DEGREES,
