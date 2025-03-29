@@ -34,9 +34,9 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
  */
 
 
-@TeleOp(name="TeleOpMainnn", group="Robot")
+@TeleOp(name="aosdijfois", group="Robott")
 //@Disabled
-public class TeleOpMain extends LinearOpMode {
+public class telev2 extends LinearOpMode {
     /* Declare OpMode members. */
     public DcMotor      leftFrontDrive; //the left front drivetrain motor
     public DcMotor      rightFrontDrive; //the right front drivetrain motor
@@ -117,9 +117,9 @@ public class TeleOpMain extends LinearOpMode {
 
             // // Controlling intake claw servo
             /*
-            * our intake claw is always closed unless left_stick_y or right_stick_y of gamepad2 are
-            * facing down or either right_stick_button and left_stick_button are pressed on gamepad2.
-            */
+             * our intake claw is always closed unless left_stick_y or right_stick_y of gamepad2 are
+             * facing down or either right_stick_button and left_stick_button are pressed on gamepad2.
+             */
 //            if (gamepad2.left_stick_y < -0.05 || gamepad2.right_stick_y < -0.05 || gamepad2.right_stick_button || gamepad2.left_stick_button){
 //                intakeOpen();
 //            }
@@ -131,12 +131,12 @@ public class TeleOpMain extends LinearOpMode {
             if(gamepad2.a){ // ps4: X
                 /* This is the intake/ collecting arm position for collecting samples */
                 armCollect();
-               // viperCollapsed();
+                // viperCollapsed();
             }
             else if (gamepad2.b) { // ps4: O
                 /*
-                * This is the correct height to collect samples from the observation zone
-                */
+                 * This is the correct height to collect samples from the observation zone
+                 */
                 armClearBarrier();
             }
             else if (gamepad2.y){ //ps4 triangle
@@ -199,10 +199,10 @@ public class TeleOpMain extends LinearOpMode {
             }
 
             /*
-            * we normalize the viper motor position
-            * we set the position as target position
-            * we finally run the viper motor
-            */
+             * we normalize the viper motor position
+             * we set the position as target position
+             * we finally run the viper motor
+             */
             viperNormalization();
             setViperTargetPosition();
             runViper();
@@ -213,10 +213,10 @@ public class TeleOpMain extends LinearOpMode {
             // Controlling strafing robot movement
             // controlling arm positions for hanging the robot
 
-             if (gamepad1.dpad_up){
+            if (gamepad1.dpad_up){
                 /* This sets the arm to vertical to hook onto the LOW RUNG for hanging */
                 armAttachHangingHook();
-               // wristVertical();
+                // wristVertical();
             }
 
             else if (gamepad1.dpad_down){
@@ -441,7 +441,7 @@ public class TeleOpMain extends LinearOpMode {
             The FUDGE_FACTOR is the number of degrees that we can adjust the arm by with this function. */
         armPositionFudgeFactor = (int) (
                 (armDegreesToTicks(10) * gamepad2.right_trigger) +
-                (armDegreesToTicks(15) * (-gamepad2.left_trigger))
+                        (armDegreesToTicks(15) * (-gamepad2.left_trigger))
         );
     }
     public void setArmTargetPosition() {
@@ -505,11 +505,11 @@ public class TeleOpMain extends LinearOpMode {
         viperPosition = viperMotorMmToTicks(mm);
     }
     // public void viperScoreInLow() {
-   //     viperPosition = viperMotorMmToTicks(0);
-  //  }
-   // public void viperScoreInHigh() {
-   //     viperPosition = viperMotorMmToTicks(380);
-  //  }
+    //     viperPosition = viperMotorMmToTicks(0);
+    //  }
+    // public void viperScoreInHigh() {
+    //     viperPosition = viperMotorMmToTicks(380);
+    //  }
     public void viperCollapsed() {
         viperPosition = viperMotorMmToTicks(0);
     }
@@ -519,10 +519,10 @@ public class TeleOpMain extends LinearOpMode {
 //    public void viperDeltaTimeDecrement() {
 //        viperPosition -= (int) (5000 * cycleTime); // 3600
 //    }
-   // public void viperDeltaTime() {
-     //   viperPositionDelta -= (int) ((int) (2000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 2000
+    // public void viperDeltaTime() {
+    //   viperPositionDelta -= (int) ((int) (2000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 2000
     //   // viperPositionDelta -= (int) ((int) (2000 * cycleTime) * (gamepad2.right_stick_y + gamepad2.left_stick_y)); // 2000
-  //  }
+    //  }
 
     public void viperNormalization() {
         /*here we check to see if the lift is trying to go higher than the maximum extension.
