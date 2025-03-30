@@ -5,7 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
-import org.firstinspires.ftc.teamcode.hardware.distance.ArmDistance;
+import org.firstinspires.ftc.teamcode.hardware.units.distance.ArmDistance;
 
 public class Arm {
     private ArmDistance pos;

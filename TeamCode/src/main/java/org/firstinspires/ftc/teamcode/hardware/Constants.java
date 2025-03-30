@@ -1,6 +1,6 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
-public class Constants {
+public final class Constants {
     public static final int ARM_TICKS_PER_DEGREE = (int) (
             28 // number of encoder ticks per rotation of the bare motor
                     * (250047.0 / 4913.0) // This is the exact gear ratio of the 50.9:1 Yellow Jacket gearbox

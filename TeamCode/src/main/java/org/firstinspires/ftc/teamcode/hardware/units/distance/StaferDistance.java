@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.hardware.distance;
+package org.firstinspires.ftc.teamcode.hardware.units.distance;
 
 import org.firstinspires.ftc.teamcode.hardware.Constants;
 
@@ -26,5 +26,10 @@ public class StaferDistance {
             return robotMmToTicks(value);
         }
         return (int) value;
+    }
+
+    public enum StaferUnit {
+        MM,
+        TICKS
     }
 }

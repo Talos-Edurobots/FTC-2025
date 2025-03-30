@@ -1,4 +1,4 @@
-package org.firstinspires.ftc.teamcode.hardware.distance;
+package org.firstinspires.ftc.teamcode.hardware.units.distance;
 
 import org.firstinspires.ftc.teamcode.hardware.Constants;
 
@@ -26,6 +26,11 @@ public class ViperDistance {
             return viperMMToTicks(value);
         }
         return (int) value;
+    }
+
+    public enum ViperUnit {
+        MM,
+        TICKS
     }
 }
 
