@@ -1,10 +1,8 @@
 package org.firstinspires.ftc.teamcode.hardware.strafer;
-
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.IMU;
-
 import org.firstinspires.ftc.teamcode.hardware.Constants;
 
 public class Strafer {
@@ -17,8 +15,6 @@ public class Strafer {
         rightFront = new Motor(hwMap, Constants.RIGHT_FRONT_MOTOR_CONFIGURATION, DcMotorSimple.Direction.FORWARD, mockingHardware);
         rightBack  = new Motor(hwMap, Constants.RIGHT_BACK_MOTOR_CONFIGURATION,  DcMotorSimple.Direction.FORWARD, mockingHardware);
     }
-
-
     static class Motor {
         private DcMotor motor;
         private double acceleration;
