@@ -1,23 +1,26 @@
 package org.firstinspires.ftc.teamcode.hardware;
 
 import com.qualcomm.robotcore.hardware.DcMotor;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 
-class StraferMotors {
-    private DcMotor rf, rb, lf, lb;
-    StraferMotors(HardwareMap hwMap) {
-        rf = hwMap.dcMotor.get(Constants.RIGHT_FRONT_MOTOR_CONFIGURATION);
-        rb = hwMap.dcMotor.get(Constants.RIGHT_BACK_MOTOR_CONFIGURATION);
-        lf = hwMap.dcMotor.get(Constants.LEFT_FRONT_MOTOR_CONFIGURATION);
-        lb = hwMap.dcMotor.get(Constants.LEFT_BACK_MOTOR_CONFIGURATION);
-        lf.setDirection(DcMotor.Direction.REVERSE);
-        lb.setDirection(DcMotor.Direction.REVERSE);
-        lf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rf.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        lb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        rb.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+class StraferMotor {
+    private DcMotor motor;
+    StraferMotor(HardwareMap hwMap, String name, DcMotorSimple.Direction direction) {
+        motor = hwMap.dcMotor.get(name);
+        motor.setDirection(direction);
+        motor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        motor.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
     }
+
 
 }
 public class Strafer {
+    private IMU imu;
+    Strafer(HardwareMap hwMap, IMU imu) {
+        this.imu = imu;
+    }
+
 }

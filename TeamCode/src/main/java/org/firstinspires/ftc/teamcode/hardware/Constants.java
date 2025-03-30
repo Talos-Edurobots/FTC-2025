@@ -29,4 +29,10 @@ public class Constants {
     public static final int VIPER_COLLAPSED_LENGTH = 480;
     public static final int VIPER_EXTENDED_LENGTH = 696;
     public static final int ARM_VELOCITY = 2500;
+    public static final int WHEEL_DIAMETER_MM = 96;
+    public static final double WHEEL_CIRCUMFERENCE = WHEEL_DIAMETER_MM * Math.PI;
+    public static final double STRAFER_MOTORS_RPM = 312.0;
+    public static final double STRAFER_MAX_SPEED = (WHEEL_CIRCUMFERENCE/1000.0)/(STRAFER_MOTORS_RPM/60.0); // m/s
+    public static final double STRAFER_MOTORS_COUNTS_PER_REVOLUTION = 537.7;
+
 }
