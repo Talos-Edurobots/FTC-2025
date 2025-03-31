@@ -390,12 +390,13 @@ public class TeleOpMain extends LinearOpMode {
             to a value.
              */
 
-        if (armPosition < armDegreesToTicks(45)) {
-            armLiftComp = 0; // 0.25568
-        }
-        else {
-            armLiftComp = 0;
-        }
+//        if (armPosition < armDegreesToTicks(45)) {
+//            armLiftComp = 0; // 0.25568
+//        }
+//        else {
+//            armLiftComp = 0;
+//        }
+        armLiftComp = Math.acos()
     }
     public void setArmPosition(int degrees) {
         armPosition = degrees;
