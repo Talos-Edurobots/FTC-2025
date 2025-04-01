@@ -10,7 +10,7 @@ public class StraferMotorVelocity {
         REVOLUTIONS_PER_MINUTE,
         POWER
     }
-    StraferMotorVelocity(double value, Units unit) {
+    public StraferMotorVelocity(double value, Units unit) {
         if (unit == Units.METERS_PER_SECOND) {
             this.mps = value;
             this.rpm = (mps*60) / (Constants.WHEEL_CIRCUMFERENCE / 1000);
