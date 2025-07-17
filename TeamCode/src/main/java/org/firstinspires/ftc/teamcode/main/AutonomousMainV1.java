@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.main;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -16,6 +17,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 @Autonomous(name="AutonomousMainV1Orf", group="Robot")
+@Disabled
 public class AutonomousMainV1 extends LinearOpMode {
     /* Declare OpMode members. */
     public DcMotor leftFrontDrive; //the left front drivetrain motor

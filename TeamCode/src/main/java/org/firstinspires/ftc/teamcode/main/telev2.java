@@ -35,7 +35,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
 @TeleOp(name="aosdijfois", group="Robott")
-//@Disabled
+@Disabled
 public class telev2 extends LinearOpMode {
     /* Declare OpMode members. */
     public DcMotor      leftFrontDrive; //the left front drivetrain motor

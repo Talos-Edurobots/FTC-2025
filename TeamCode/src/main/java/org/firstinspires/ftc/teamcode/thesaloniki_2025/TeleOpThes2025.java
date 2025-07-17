@@ -2,6 +2,7 @@ package org.firstinspires.ftc.teamcode.thesaloniki_2025;
 
 import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
 import com.qualcomm.hardware.sparkfun.SparkFunOTOS;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -34,7 +35,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.DistanceUnit;
 
 
 @TeleOp(name="TeleOpThes2025", group="Robot")
-//@Disabled
+@Disabled
 public class TeleOpThes2025 extends LinearOpMode {
     /* Declare OpMode members. */
     public DcMotor      leftFrontDrive; //the left front drivetrain motor

@@ -3,6 +3,7 @@ package org.firstinspires.ftc.teamcode.thesaloniki_2025;
 import android.util.Log;
 
 import com.qualcomm.robotcore.eventloop.opmode.Autonomous;
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
@@ -24,7 +25,7 @@ import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
  *
  */
 @Autonomous(name ="encoder")
-//@Disabled
+@Disabled
 public class ObservationAutoThes2025 extends LinearOpMode {
     public DcMotor driveFrontLeft, driveFrontRight, driveRearLeft, driveRearRight, viper, arm;
     public boolean isRed = true, toObservation = false, recentAreaChange, recentIsRedChange;

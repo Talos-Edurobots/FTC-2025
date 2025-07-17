@@ -22,6 +22,7 @@
 
 package org.firstinspires.ftc.teamcode.main;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.Servo;
@@ -48,7 +49,7 @@ import com.qualcomm.robotcore.hardware.Servo;
  */
 
 @TeleOp(name="Servo Position Helper!", group="Concept")
-//@Disabled
+@Disabled
 public class ServoPositionHelper extends LinearOpMode {
 
     // Declare OpMode member.
