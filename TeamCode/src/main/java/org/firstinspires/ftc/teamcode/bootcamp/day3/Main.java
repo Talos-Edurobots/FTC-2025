@@ -1,5 +1,6 @@
 package org.firstinspires.ftc.teamcode.bootcamp.day3;
 
+import com.qualcomm.robotcore.eventloop.opmode.Disabled;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
@@ -8,6 +9,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 import org.firstinspires.ftc.teamcode.bootcamp.DriveTrain;
 
 @TeleOp(name = "Bootcamp Day 3", group = "Robot")
+@Disabled
 public class Main extends LinearOpMode {
     ElapsedTime timer;
     private DriveTrain driveTrain;
