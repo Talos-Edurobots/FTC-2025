@@ -10,12 +10,12 @@ import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.navigation.CurrentUnit;
 
-@TeleOp(name = "FridayBootcamp 1 controller", group = "Challenges")
+@TeleOp(name = "FridayBootcamp 2 controllers", group = "Challenges")
 @Disabled
-public class FGCBootcampFriday extends LinearOpMode {
+public class FGCBootcampFriday2 extends LinearOpMode {
     private DcMotor leftDrive, rightDrive, ropeDrive, intakeDrive;
     private Servo servoDrive;
-    private double normalSpeed = .6; // the speed that the robot will move
+    private double normalSpeed = .8; // the speed that the robot will move
     private double slowSpeed = .4;
     private double open_pos = .5;
     private double closed_pos = 0;
@@ -33,8 +33,8 @@ public class FGCBootcampFriday extends LinearOpMode {
         rightDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         ropeDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         intakeDrive.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        leftDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        rightDrive.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        leftDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        rightDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         intakeDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         ropeDrive.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
         servoDrive.setPosition(open_pos);
@@ -43,24 +43,24 @@ public class FGCBootcampFriday extends LinearOpMode {
             double forwardSpeed = -gamepad1.left_stick_y;
             double turnSpeed = gamepad1.right_stick_x;
             double decelerationAmount = gamepad1.left_trigger;
-            double multiplier = normalSpeed - (decelerationAmount * (normalSpeed - slowSpeed));
+            double targetStrafingSpeed = normalSpeed - (decelerationAmount * (normalSpeed - slowSpeed));
 
             //drive
-            rightDrive.setPower(multiplier * (forwardSpeed + turnSpeed));
-            leftDrive.setPower(multiplier * (forwardSpeed - turnSpeed));
+            rightDrive.setPower(targetStrafingSpeed * (forwardSpeed + turnSpeed));
+            leftDrive.setPower(targetStrafingSpeed * (forwardSpeed - turnSpeed));
             //servo
-            if (gamepad1.y){
+            if (gamepad2.y){
                 servoDrive.setPosition(open_pos);
             }
-            else if (gamepad1.a){
+            else if (gamepad2.a){
                 servoDrive.setPosition(closed_pos);
             }
 
             //intake
-            if (gamepad1.left_bumper){
+            if (gamepad2.left_bumper){
                 intakeDrive.setPower(1);
             }
-            else if (gamepad1.right_bumper) {
+            else if (gamepad2.right_bumper) {
                 intakeDrive.setPower(-1);
             }
             else {
@@ -78,7 +78,7 @@ public class FGCBootcampFriday extends LinearOpMode {
             }
 
             //telemetry
-            telemetry.addData("multiplier", multiplier);
+            telemetry.addData("target strafing speed", targetStrafingSpeed);
             telemetry.addData("left drive power", leftDrive.getPower());
             telemetry.addData("right drive power", rightDrive.getPower());
             telemetry.addData("intake current", ((DcMotorEx) intakeDrive).getCurrent(CurrentUnit.AMPS));
